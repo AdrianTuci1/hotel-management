@@ -1,0 +1,58 @@
+.calendarContainer {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Fereastra chat ocupă toată înălțimea */
+    background: #2b2b2b;
+    color: white;
+    box-sizing: border-box;
+  }
+  
+  .dateSelectors {
+    padding: 1rem;
+    background: #1e1e1e;
+    display: flex;
+    gap: 1rem;
+    /* Înălțimea selectoarelor e fixă, restul e ocupat de tabel */
+  }
+  
+  .tableWrapper {
+    flex: 1;           /* Ocupă tot spațiul rămas pe verticală */
+    overflow: auto;    /* Scroll orizontal + vertical */
+  }
+  
+  .calendarTable {
+    border-collapse: collapse;
+    width: max-content; /* Tabelul se poate extinde orizontal */
+    table-layout: auto; /* Permite lățimea liberă */
+    height: 100vh;
+  }
+  
+  .headerCell {
+    background: #1e1e1e;
+    border: 1px solid #444;
+    padding: 0.5rem;
+    text-align: center;
+    min-width: 80px;
+    white-space: nowrap;
+  }
+  
+  .roomCell {
+    background: #1e1e1e;
+    border: 1px solid #444;
+    padding: 0.5rem;
+    text-align: center;
+    white-space: nowrap;
+  }
+  
+  .dayCell {
+    border: 1px solid #444;
+    text-align: center;
+    padding: 0.5rem;
+    min-width: 80px;
+    white-space: nowrap;
+  }
+  
+  .occupied {
+    background: #a03535;
+    color: #fff;
+  }
