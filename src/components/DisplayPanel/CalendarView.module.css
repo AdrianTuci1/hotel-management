@@ -56,3 +56,16 @@
     background: #a03535;
     color: #fff;
   }
+
+
+  /* 🔴 Cameră ocupată (booked) */
+.booked {
+  background: red;
+  color: white;
+}
+
+/* 🟡 Cameră rezervată dar neconfirmată (confirmed) */
+.confirmed {
+  background: yellow;
+  color: black;
+}

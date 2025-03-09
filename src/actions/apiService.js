@@ -44,6 +44,12 @@ const apiService = {
 
     return data; 
   },
+
+  getRooms: async () => {
+    const response = await fetch(`${API_URL}/rooms`);
+    if (!response.ok) throw new Error("❌ Eroare la preluarea camerelor!");
+    return response.json();
+  },
 };
 
 export default apiService;
