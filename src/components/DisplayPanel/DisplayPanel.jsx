@@ -7,7 +7,7 @@ import InvoiceView from "./InvoiceView";
 import styles from "./DisplayPanel.module.css";
 
 const DisplayPanel = () => {
-  const { displayComponent, closeDisplayPanel } = useChatStore();
+  const { displayComponent, closeDisplayComponent } = useChatStore();
 
   // 🔹 Dacă nu există un panou activ, nu afișăm nimic
   if (!displayComponent) return null;
@@ -15,7 +15,7 @@ const DisplayPanel = () => {
   return (
     <div className={styles.panelContainer}>
       {/* 🔹 Buton de închidere */}
-      <button className={styles.closeButton} onClick={closeDisplayPanel}>
+      <button className={styles.closeButton} onClick={closeDisplayComponent}>
         ✖
       </button>
 

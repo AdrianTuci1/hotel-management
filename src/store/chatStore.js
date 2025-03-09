@@ -4,17 +4,19 @@ export const useChatStore = create((set) => ({
   messages: [],
   displayComponent: null,
 
-  // 🔹 Adăugăm un mesaj în chat
-  addMessage: (text, type, options = null, formFields = null) =>
-    set((state) => ({
-      messages: [...state.messages, { text, type, options, formFields }],
-    })),
+  // 🔹 Adăugăm mesaj în chat
+  addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
 
-  // 🔹 Setăm panoul UI activ
-  setDisplayComponent: (component) => set({ displayComponent: component }),
+  setDisplayComponent: (component) => {
+    console.log("🔄 Setăm displayComponent:", component); // Debugging
+    set({ displayComponent: component });
+  },
 
-  // 🔹 Închidem panoul activ
-  closeDisplayPanel: () => set({ displayComponent: null }),
+  closeDisplayComponent: () => {
+    console.log("❌ Închidem panoul activ");
+    set({ displayComponent: null });
+  },
 
-  clearMessages: () => set({ messages: [] }),
+  // 🔹 Resetăm chat-ul
+  resetChat: () => set({ messages: [], displayComponent: null }),
 }));

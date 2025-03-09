@@ -41,9 +41,7 @@ const ChatWindow = () => {
 
       <div className={styles.chatWrapper}>
         <div className={styles.messageList}>
-          {messages.map((msg, index) => (
-            <ChatMessage key={index} {...msg} />
-          ))}
+          {messages.map((msg, index) => <ChatMessage key={index} {...msg} />)}
         </div>
         <ChatInput onSendMessage={handleChatMessage} />
       </div>
