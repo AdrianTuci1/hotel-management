@@ -1,39 +1,71 @@
-import apiService from "./apiService";
 import { useChatStore } from "../store/chatStore";
+import { useCalendarStore } from "../store/calendarStore";
 
-export const handleChatMessage = async (message) => {
-  const { addMessage, setDisplayComponent } = useChatStore.getState();
+let chatWorker;
 
-  // 🔹 Adăugăm mesajul utilizatorului în chat
+export const connectSocket = () => {
+  if (!chatWorker) {
+    chatWorker = new Worker(new URL("../workers/WebSocketWorker.js", import.meta.url));
+
+    chatWorker.onmessage = (event) => {
+      const { type, payload } = event.data;
+      const { addMessage, setDisplayComponent } = useChatStore.getState();
+      const { setReservations } = useCalendarStore.getState();
+
+      console.log("📩 Răspuns WebSocket din Worker:", event.data);
+
+      if (type === "chat_response" && payload.response) {
+        const { intent, message, type: msgType, options, formFields, extraIntents } = payload.response;
+
+        // 🔹 Adăugăm răspunsul în chat
+        addMessage({
+          text: message,
+          type: msgType || "bot",
+          options: options || null,
+          formFields: formFields || null,
+        });
+
+        // 📊 Gestionăm deschiderea panourilor UI
+        if (["show_calendar", "show_pos", "show_invoices", "show_stock"].includes(intent)) {
+          console.log(`📌 Deschidem panoul: ${intent.replace("show_", "")}`);
+          setDisplayComponent(intent.replace("show_", ""));
+        }
+
+        // 📊 Gestionăm extraIntents
+        if (Array.isArray(extraIntents) && extraIntents.length > 0) {
+          extraIntents.forEach((extraIntent) => {
+            if (["show_calendar", "show_pos", "show_invoices", "show_stock"].includes(extraIntent)) {
+              console.log(`📌 Deschidem panoul suplimentar: ${extraIntent.replace("show_", "")}`);
+              setDisplayComponent(extraIntent.replace("show_", ""));
+            }
+          });
+        }
+      } 
+      
+      else if (type === "active_reservations") {
+        console.log("📡 Rezervări active primite:", payload);
+        setReservations(payload);
+      } 
+      
+      else if (type === "status") {
+        console.log(`ℹ️ WebSocket Status: ${payload}`);
+      } 
+      
+      else if (type === "error") {
+        console.error("❌ Eroare WebSocket:", payload);
+      }
+    };
+  }
+};
+
+export const handleChatMessage = (message) => {
+  const { addMessage } = useChatStore.getState();
+
   addMessage({ text: message, type: "user" });
 
-  // 🔥 Trimitem mesajul către backend
-  const response = await apiService.sendMessage(message);
-
-  console.log("📌 Răspuns de la backend:", JSON.stringify(response, null, 2)); // Debugging
-
-  // 📌 Adăugăm răspunsul botului în chat
-  addMessage({
-    text: response.message,
-    type: response.type || "bot",
-    options: response.options || null,
-    formFields: response.formFields || null,
-  });
-
-  // 📊 1. Interacțiuni UI (Deschidere Panouri) pe baza `intent`
-  if (["show_calendar", "show_pos", "show_invoices", "show_stock"].includes(response.intent)) {
-    console.log(`📌 Deschidem panoul: ${response.intent.replace("show_", "")}`);
-    setDisplayComponent(response.intent.replace("show_", ""));
-  }
-
-  // 📊 2. Gestionăm extraIntents (Deschidere multiplă)
-  if (Array.isArray(response.extraIntents) && response.extraIntents.length > 0) {
-    console.log("✅ ExtraIntents primite:", response.extraIntents);
-    response.extraIntents.forEach((intent) => {
-      if (["show_calendar", "show_pos", "show_invoices", "show_stock"].includes(intent)) {
-        console.log(`📌 Deschidem panoul suplimentar: ${intent.replace("show_", "")}`);
-        setDisplayComponent(intent.replace("show_", ""));
-      }
-    });
+  if (chatWorker && chatWorker.postMessage) {
+    chatWorker.postMessage({ type: "send_message", payload: message });
+  } else {
+    console.warn("⚠️ Web Worker nu este inițializat sau nu suportă postMessage!");
   }
 };

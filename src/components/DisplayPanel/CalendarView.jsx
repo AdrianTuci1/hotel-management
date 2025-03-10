@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useCalendarStore } from "../../store/calendarStore";
 import styles from "./CalendarView.module.css";
 
-const generateDatesArray = (startDate, endDate) => {
+// 🔹 Generăm array-ul de zile între `startDate` și `endDate`
+function generateDatesArray(startDate, endDate) {
   const dates = [];
   let current = new Date(startDate);
   while (current <= new Date(endDate)) {
@@ -10,28 +11,44 @@ const generateDatesArray = (startDate, endDate) => {
     current.setDate(current.getDate() + 1);
   }
   return dates;
-};
+}
 
 const CalendarView = () => {
-  const { rooms, reservations, startDate, endDate, setDateRange, fetchRooms, initSocketListeners } = useCalendarStore();
-  const days = generateDatesArray(startDate, endDate);
+  const { rooms, reservations, startDate, endDate, setDateRange, fetchRooms } = useCalendarStore();
+  const [days, setDays] = useState([]);
 
   useEffect(() => {
     fetchRooms();
-    initSocketListeners(); // 🔥 Conectăm WebSocket-ul
-  }, []);
+    setDays(generateDatesArray(startDate, endDate));
+  }, [startDate, endDate]);
 
-  const getRoomStatus = (room, date) => {
+  // 🔹 Verificăm dacă o cameră este ocupată într-o anumită zi
+  const isRoomOccupied = (roomNumber, date) => {
     const dayStr = date.toISOString().split("T")[0];
-    const reservation = reservations.find(
-      (res) => res.roomNumber == room.number && dayStr >= res.checkInDate && dayStr < res.checkOutDate
-    );
 
-    if (reservation) {
-      return reservation.status; // `confirmed` (galben) sau `booked` (roșu)
-    }
-    return "free"; // Alb (liber)
+    return reservations.some((res) => {
+      return (
+        res.roomNumber === roomNumber &&
+        dayStr >= res.checkInDate.split("T")[0] &&
+        dayStr < res.checkOutDate.split("T")[0]
+      );
+    });
   };
+
+  // 🔥 Obținem statusul camerei pentru o anumită zi
+  const getRoomStatus = (roomNumber, date) => {
+    if (isRoomOccupied(roomNumber, date)) {
+      const reservation = reservations.find(
+        (res) =>
+          res.roomNumber === roomNumber &&
+          date.toISOString().split("T")[0] >= res.checkInDate.split("T")[0] &&
+          date.toISOString().split("T")[0] < res.checkOutDate.split("T")[0]
+      );
+      return reservation.status; // Poate fi "inregistrata" (galben) sau "confirmata" (roșu)
+    }
+    return "free"; // Dacă nu este rezervată
+  };
+
 
   return (
     <div className={styles.calendarContainer}>
@@ -57,14 +74,13 @@ const CalendarView = () => {
           <tbody>
             {rooms.map((room) => (
               <tr key={room.number}>
-                <td className={styles.roomCell}>
-                  {room.number}
-                </td>
+                <td className={styles.roomCell}>{room.number}</td>
                 {days.map((day) => {
-                  const status = getRoomStatus(room, day);
+                  const status = getRoomStatus(room.number, day);
+                  console.log(status)
                   return (
                     <td key={`${room.number}-${day.toISOString()}`} className={`${styles.dayCell} ${styles[status]}`}>
-                      {status === "booked" ? "Ocupat" : status === "confirmed" ? "Rezervat" : ""}
+                      {status === "booked" ? "🔶 Booked" : status === "confirmed" ? "🔴 Confirmed" : ""}
                     </td>
                   );
                 })}

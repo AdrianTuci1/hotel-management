@@ -59,13 +59,13 @@
 
 
   /* 🔴 Cameră ocupată (booked) */
-.booked {
+.booked{
   background: red;
   color: white;
 }
 
 /* 🟡 Cameră rezervată dar neconfirmată (confirmed) */
-.confirmed {
+.confirmed{
   background: yellow;
   color: black;
 }

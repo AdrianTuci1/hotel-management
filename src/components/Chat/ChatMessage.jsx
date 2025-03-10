@@ -3,7 +3,7 @@ import styles from "./ChatMessage.module.css";
 import { useChatStore } from "../../store/chatStore";
 import apiService from "../../actions/apiService";
 
-const ChatMessage = ({ text, type, options, reservation, formFields, entities }) => {
+const ChatMessage = ({ text, type, options, reservation, formFields }) => {
   const addMessage = useChatStore((state) => state.addMessage);
   const [formData, setFormData] = useState({});
 

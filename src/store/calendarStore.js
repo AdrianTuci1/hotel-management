@@ -1,8 +1,5 @@
 import { create } from "zustand";
-import { io } from "socket.io-client";
 import apiService from "../actions/apiService";
-
-const socket = io("http://localhost:5001");
 
 export const useCalendarStore = create((set) => ({
   rooms: [],
@@ -25,11 +22,8 @@ export const useCalendarStore = create((set) => ({
     }
   },
 
-  // 📡 Ascultăm evenimentul `update_reservations`
-  initSocketListeners: () => {
-    socket.on("update_reservations", (reservations) => {
-      console.log("📡 Rezervări actualizate:", reservations);
-      set({ reservations });
-    });
+  setReservations: (reservations) => {
+    console.log("📡 Actualizare rezervări:", reservations);
+    set({ reservations: [...reservations] }); // 🔥 Copiem datele pentru a forța React să redea UI
   },
 }));

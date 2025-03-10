@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ChatInput from "./ChatInput";
 import ChatMessage from "./ChatMessage";
 import styles from "./ChatWindow.module.css";
 import { useChatStore } from "../../store/chatStore";
-import { handleChatMessage } from "../../actions/chatActions";
+import { handleChatMessage, connectSocket } from "../../actions/chatActions";
 
 const commandsList = [
   "deschide calendarul",
@@ -15,6 +15,11 @@ const commandsList = [
 
 const ChatWindow = () => {
   const { messages } = useChatStore();
+
+  useEffect(() => {
+    connectSocket(); // 🔥 Inițializăm WebSocket când componenta se montează
+  }, []);
+
   const [showCommands, setShowCommands] = useState(false);
 
   const toggleCommands = () => {
