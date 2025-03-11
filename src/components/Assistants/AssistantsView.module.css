@@ -1,0 +1,412 @@
+.container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  color: #e4e6eb;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.header h2 {
+  font-size: 2rem;
+  color: #e4e6eb;
+  margin: 0;
+}
+
+.header p {
+  color: #b0b3b8;
+  margin: 0.5rem 0 0;
+}
+
+.assistantsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.assistantCard {
+  background: #242526;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid #393a3b;
+}
+
+.assistantHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.assistantInfo {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.assistantIcon {
+  font-size: 2rem;
+  background: #3a3b3c;
+  padding: 0.75rem;
+  border-radius: 12px;
+}
+
+.assistantInfo h3 {
+  margin: 0;
+  color: #e4e6eb;
+  font-size: 1.25rem;
+}
+
+.assistantInfo p {
+  margin: 0.25rem 0 0;
+  color: #b0b3b8;
+  font-size: 0.9rem;
+}
+
+/* Switch toggle */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #3a3b3c;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #e4e6eb;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #0084ff;
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+/* Configuration section */
+.assistantConfig {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #3a3b3c;
+  border-radius: 8px;
+}
+
+.assistantConfig h4 {
+  margin: 0 0 1rem;
+  color: #e4e6eb;
+  font-size: 1rem;
+}
+
+.configItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.configItem label {
+  color: #b0b3b8;
+  font-size: 0.9rem;
+}
+
+.configItem input[type="number"] {
+  width: 80px;
+  padding: 0.25rem;
+  border: 1px solid #4a4b4d;
+  border-radius: 4px;
+  background: #242526;
+  color: #e4e6eb;
+}
+
+.platformsList {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.platform {
+  background: #4a4b4d;
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  color: #e4e6eb;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.platform.connected {
+  background: #31a24c;
+}
+
+.platform.disconnected {
+  background: #3a3b3c;
+  color: #b0b3b8;
+}
+
+.connectButton {
+  background: #0084ff;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.connectButton:hover {
+  background: #0073e6;
+}
+
+/* Metrics section */
+.assistantMetrics {
+  padding: 1rem;
+  background: #3a3b3c;
+  border-radius: 8px;
+}
+
+.assistantMetrics h4 {
+  margin: 0 0 1rem;
+  color: #e4e6eb;
+  font-size: 1rem;
+}
+
+.metricsList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metric span:first-child {
+  font-size: 0.8rem;
+  color: #b0b3b8;
+}
+
+.metricValue {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #0084ff;
+}
+
+/* Form styling */
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #b0b3b8;
+  font-size: 0.9rem;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #3a3b3c;
+  border-radius: 8px;
+  background: #3a3b3c;
+  color: #e4e6eb;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #0084ff;
+  background: #4a4b4d;
+  box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.2);
+}
+
+.formGroup input::placeholder {
+  color: #848587;
+}
+
+/* Enhanced modal styling */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #242526;
+  padding: 2rem;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 440px;
+  z-index: 1000;
+  border: 1px solid #393a3b;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 999;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #3a3b3c;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  color: #e4e6eb;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.closeButton {
+  background: #3a3b3c;
+  border: none;
+  color: #b0b3b8;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: #4a4b4d;
+  color: #e4e6eb;
+}
+
+.modalContent {
+  color: #e4e6eb;
+}
+
+/* Connection button styling */
+.connectButton {
+  width: 100%;
+  padding: 0.875rem;
+  background: #0084ff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 1rem;
+}
+
+.connectButton:hover {
+  background: #0073e6;
+}
+
+.connectButton:disabled {
+  background: #3a3b3c;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Platform connection status */
+.platformStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #3a3b3c;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.statusIcon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.statusIcon.connected {
+  background: #31a24c;
+  box-shadow: 0 0 0 2px rgba(49, 162, 76, 0.2);
+}
+
+.statusIcon.disconnected {
+  background: #f02849;
+  box-shadow: 0 0 0 2px rgba(240, 40, 73, 0.2);
+}
+
+.platformName {
+  color: #e4e6eb;
+  font-size: 0.9rem;
+}
+
+/* Loading state */
+.loadingSpinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e4e6eb;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 0.8s linear infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error message */
+.error {
+  background: rgba(240, 40, 73, 0.1);
+  border: 1px solid rgba(240, 40, 73, 0.2);
+  color: #f02849;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+} 

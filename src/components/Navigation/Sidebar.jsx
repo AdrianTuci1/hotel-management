@@ -9,14 +9,9 @@ const menuItems = [
     icon: '📊',
   },
   {
-    id: 'reservations',
-    label: 'Rezervări',
-    icon: '📅',
-  },
-  {
-    id: 'guests',
-    label: 'Oaspeți',
-    icon: '👥',
+    id: 'assistants',
+    label: 'Asistenți',
+    icon: '🤖',
   },
   {
     id: 'rooms',

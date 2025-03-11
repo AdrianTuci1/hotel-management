@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
-import ChatWindow from "./Chat/ChatWindow";
-import DisplayPanel from "./DisplayPanel/DisplayPanel";
-import ReceptionDashboard from "./ReceptionDashboard/ReceptionDashboard";
+import ChatWindow from "../components/Chat/ChatWindow";
+import DisplayPanel from "../components/DisplayPanel/DisplayPanel";
+import ReceptionDashboard from "../components/ReceptionDashboard/ReceptionDashboard";
 import styles from "./Dashboard.module.css";
 import { useChatStore } from "../store/chatStore";
 
