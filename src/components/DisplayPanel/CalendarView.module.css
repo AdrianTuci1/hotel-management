@@ -8,19 +8,44 @@
   }
   
   .dateSelectors {
-    padding: 1rem;
-    background: #1e1e1e;
     display: flex;
     gap: 1rem;
-    /* Înălțimea selectoarelor e fixă, restul e ocupat de tabel */
+    align-items: center;
+    padding: 1rem;
+    background: #1a1a1a;
+    border-radius: 8px;
   }
   
-  .dateSelectors input {
-    background: #2b2b2b;
-    color: white;
+  .dateSelectors input[type="date"] {
+    background: #2a2a2a;
     border: 1px solid #444;
+    color: white;
     padding: 0.5rem;
     border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .dateSelectors label {
+    color: #999;
+  }
+  
+  .quickSelectButton {
+    background: #2d3436;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: auto;
+  }
+  
+  .quickSelectButton:hover {
+    background: #3d4446;
+  }
+  
+  .quickSelectButton:active {
+    transform: translateY(1px);
   }
   
   .tableWrapper {

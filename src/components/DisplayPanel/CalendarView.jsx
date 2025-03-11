@@ -23,6 +23,17 @@ const CalendarView = () => {
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const tableWrapperRef = useRef(null);
 
+  const setNextTwoWeeks = () => {
+    const today = new Date();
+    const twoWeeksLater = new Date(today);
+    twoWeeksLater.setDate(today.getDate() + 14);
+    
+    setDateRange(
+      today.toISOString().split('T')[0],
+      twoWeeksLater.toISOString().split('T')[0]
+    );
+  };
+
   useEffect(() => {
     fetchRooms();
     setDays(generateDatesArray(startDate, endDate));
@@ -114,6 +125,13 @@ const CalendarView = () => {
         <input type="date" value={startDate} onChange={(e) => setDateRange(e.target.value, endDate)} />
         <label>End:</label>
         <input type="date" value={endDate} onChange={(e) => setDateRange(startDate, e.target.value)} />
+        <button 
+          className={styles.quickSelectButton}
+          onClick={setNextTwoWeeks}
+          title="Setează perioada la următoarele 2 săptămâni"
+        >
+          Acum
+        </button>
       </div>
 
       <div 

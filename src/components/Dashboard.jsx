@@ -8,10 +8,15 @@ import { useChatStore } from "../store/chatStore";
 const Dashboard = () => {
   const { displayComponent } = useChatStore();
   const [isResizing, setIsResizing] = useState(false);
-  const [panelWidth, setPanelWidth] = useState(50); // procent din lățimea totală
+  const [panelWidth, setPanelWidth] = useState(displayComponent ? 50 : 30); // 50% pentru DisplayPanel, 30% pentru ReceptionDashboard
   const containerRef = useRef(null);
   const initialX = useRef(0);
   const initialWidth = useRef(0);
+
+  // Actualizăm width-ul când se schimbă componenta
+  React.useEffect(() => {
+    setPanelWidth(displayComponent ? 50 : 70);
+  }, [displayComponent]);
 
   const handleMouseDown = useCallback((e) => {
     setIsResizing(true);
@@ -52,24 +57,20 @@ const Dashboard = () => {
     }
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
+  const showSidePanel = displayComponent || !displayComponent;
+  const SidePanelComponent = displayComponent ? DisplayPanel : ReceptionDashboard;
+
   return (
     <div className={styles.dashboardContainer}>
-      {/* Chat și ReceptionDashboard overlay */}
       <div 
-        className={`${styles.chatContainer} ${displayComponent ? styles.chatWithPanel : ""}`}
-        style={{ width: displayComponent ? `${panelWidth}%` : '100%' }}
+        className={`${styles.chatContainer} ${showSidePanel ? styles.chatWithPanel : ""}`}
+        style={{ width: showSidePanel ? `${panelWidth}%` : '100%' }}
         ref={containerRef}
       >
         <ChatWindow />
-        {!displayComponent && (
-          <div className={styles.receptionOverlay}>
-            <ReceptionDashboard />
-          </div>
-        )}
       </div>
 
-      {/* Resizer și Display Panel */}
-      {displayComponent && (
+      {showSidePanel && (
         <>
           <div 
             className={styles.resizer}
@@ -83,7 +84,7 @@ const Dashboard = () => {
             className={styles.panelContainer}
             style={{ width: `${100 - panelWidth}%` }}
           >
-            <DisplayPanel />
+            <SidePanelComponent />
           </div>
         </>
       )}
