@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useCalendarStore } from "../../store/calendarStore";
 import useRoomOptionsStore from "../../store/roomOptionsStore";
+import { useChatStore } from "../../store/chatStore";
 import styles from "./CalendarView.module.css";
 
 // 🔹 Generăm array-ul de zile între `startDate` și `endDate`
@@ -17,11 +18,13 @@ function generateDatesArray(startDate, endDate) {
 const CalendarView = () => {
   const { rooms, reservations, startDate, endDate, setDateRange, fetchRooms } = useCalendarStore();
   const { highlightedRoom, selectedRooms } = useRoomOptionsStore();
+  const addMessage = useChatStore((state) => state.addMessage);
   const [days, setDays] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const tableWrapperRef = useRef(null);
+  const dragStartTimeRef = useRef(0);
 
   const setNextTwoWeeks = () => {
     const today = new Date();
@@ -39,9 +42,46 @@ const CalendarView = () => {
     setDays(generateDatesArray(startDate, endDate));
   }, [startDate, endDate]);
 
+  const handleCellClick = (roomNumber, date) => {
+    // Verificăm dacă click-ul este parte a unui drag (scroll)
+    const dragDuration = Date.now() - dragStartTimeRef.current;
+    if (dragDuration > 200) return; // Ignorăm click-ul dacă a fost parte a unui drag
+
+    const reservation = reservations.find(
+      (res) =>
+        res.roomNumber === roomNumber &&
+        date.toISOString().split("T")[0] >= res.checkInDate.split("T")[0] &&
+        date.toISOString().split("T")[0] < res.checkOutDate.split("T")[0]
+    );
+
+    if (reservation) {
+      // Găsim camera în lista de camere pentru a obține detaliile
+      const room = rooms.find(r => r.number === roomNumber);
+      if (!room) return;
+
+      // Creăm opțiunea pentru cameră în formatul așteptat
+      const options = [`Camera ${room.number} - ${room.type} (${room.basePrice} lei/noapte)`];
+
+      // Adăugăm un mesaj în chat cu detaliile rezervării
+      addMessage({
+        type: "bot",
+        text: `Detalii rezervare pentru Camera ${roomNumber}:`,
+        reservation: {
+          roomNumber: reservation.roomNumber,
+          startDate: reservation.checkInDate.split("T")[0],
+          endDate: reservation.checkOutDate.split("T")[0],
+          // Adăugăm restul detaliilor din rezervare
+          ...reservation
+        },
+        options: options
+      });
+    }
+  };
+
   const handleMouseDown = (e) => {
     if (e.button === 0) { // doar click stânga
       setIsDragging(true);
+      dragStartTimeRef.current = Date.now();
       setDragStart({
         x: e.clientX + tableWrapperRef.current.scrollLeft,
         y: e.clientY + tableWrapperRef.current.scrollTop
@@ -174,7 +214,9 @@ const CalendarView = () => {
                         ${styles.dayCell} 
                         ${styles[status]} 
                         ${isHighlighted ? styles.highlighted : ''}
+                        ${status !== 'free' ? styles.clickable : ''}
                       `}
+                      onClick={() => handleCellClick(room.number, day)}
                     >
                       {status === "booked" ? "🔶" : status === "confirmed" ? "🔴" : ""}
                     </td>

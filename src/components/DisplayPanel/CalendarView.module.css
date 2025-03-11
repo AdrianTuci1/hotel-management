@@ -149,3 +149,14 @@
     background: rgba(255, 255, 0, 0.3);
     color: black;
   }
+  
+  .dayCell.clickable {
+    cursor: pointer !important;
+    transition: all 0.2s ease;
+  }
+  
+  .dayCell.clickable:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+    z-index: 1;
+  }

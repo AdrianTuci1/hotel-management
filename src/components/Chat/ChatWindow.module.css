@@ -4,7 +4,7 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  height: 100%; /* Fixăm înălțimea la întreaga fereastră */
+  height: 100%;  /* Fixăm înălțimea la întreaga fereastră */
   background-color: #1e1e1e;
   color: white;
 }

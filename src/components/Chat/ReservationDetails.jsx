@@ -1,19 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./ChatMessage.module.css";
 import useRoomOptionsStore from "../../store/roomOptionsStore";
 import { useCalendarStore } from "../../store/calendarStore";
+import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
+import apiService from "../../actions/apiService";
 
-// Simulăm datele despre tipurile de camere (în practică ar veni din API/bază de date)
-const ROOM_TYPES = {
-  "101": { type: "Single", basePrice: 200 },
-  "102": { type: "Double", basePrice: 300 },
-  "103": { type: "Twin", basePrice: 300 },
-  "201": { type: "Apartament", basePrice: 500 },
-  "202": { type: "Triple", basePrice: 400 },
-  "203": { type: "Suite", basePrice: 600 }
-};
-
-const ReservationDetails = ({ reservationData, setReservationData, options }) => {
+const ReservationDetails = ({ reservationData, setReservationData, options, onFinalize }) => {
   const { 
     highlightedRoom,
     selectedRooms,
@@ -26,13 +18,37 @@ const ReservationDetails = ({ reservationData, setReservationData, options }) =>
     setHighlightedRoom,
     clearHighlightedRoom
   } = useRoomOptionsStore();
-  const { updateViewPeriod } = useCalendarStore();
+
   const [existingClient, setExistingClient] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState({
     isPaid: false,
     hasInvoice: false,
     hasReceipt: false
   });
+
+  // Populăm starea inițială din reservationData
+  useEffect(() => {
+    if (reservationData) {
+      setExistingClient(!!reservationData.existingClientId);
+      setPaymentStatus({
+        isPaid: reservationData.isPaid || false,
+        hasInvoice: reservationData.hasInvoice || false,
+        hasReceipt: reservationData.hasReceipt || false
+      });
+    }
+  }, [reservationData]);
+
+  const extractRoomInfo = (option) => {
+    const match = option.match(/Camera (\d+) - (\w+) \((\d+) lei\/noapte\)/);
+    if (match) {
+      return {
+        roomNumber: match[1],
+        type: match[2],
+        basePrice: parseInt(match[3])
+      };
+    }
+    return null;
+  };
 
   const handleMouseEnter = (roomNumber) => {
     setHighlightedRoom(roomNumber);
@@ -42,13 +58,14 @@ const ReservationDetails = ({ reservationData, setReservationData, options }) =>
     clearHighlightedRoom();
   };
 
-  const handleRoomSelect = (roomNumber) => {
+  const handleRoomSelect = (roomNumber, basePrice) => {
     const room = selectedRooms.find(r => r.roomNumber === roomNumber);
     if (room) {
       removeRoom(roomNumber);
     } else {
-      // Adăugăm camera cu perioada predefinită din rezervare dacă există
+      // Adăugăm camera cu perioada și prețul de bază
       addRoom(roomNumber, reservationData?.startDate, reservationData?.endDate);
+      updateRoomPrice(roomNumber, basePrice);
     }
 
     // Actualizăm datele rezervării
@@ -94,12 +111,14 @@ const ReservationDetails = ({ reservationData, setReservationData, options }) =>
     });
   };
 
-  const handleSave = () => {
-    // Aici se va implementa logica de salvare
-    console.log("Salvare rezervare:", {
-      ...reservationData,
-      rooms: selectedRooms
-    });
+  const handleSave = async () => {
+    try {
+      // Logica de salvare existentă
+      await apiService.createReservation(reservationData);
+      onFinalize(); // Apelăm funcția de finalizare după salvare
+    } catch (error) {
+      console.error('Error saving reservation:', error);
+    }
   };
 
   const handleDelete = () => {
@@ -176,29 +195,26 @@ const ReservationDetails = ({ reservationData, setReservationData, options }) =>
         <div className={styles.availableRooms}>
           <div className={styles.roomsGrid}>
             {options.map((option, index) => {
-              const roomNumber = option.match(/\d+/)?.[0];
-              if (!roomNumber) return null;
+              const roomInfo = extractRoomInfo(option);
+              if (!roomInfo) return null;
 
-              const roomInfo = getRoomInfo(roomNumber);
-              const isSelected = selectedRooms.some(r => r.roomNumber === roomNumber);
+              const isSelected = selectedRooms.some(r => r.roomNumber === roomInfo.roomNumber);
               
               return (
                 <div 
                   key={index}
                   className={`${styles.roomOption} ${isSelected ? styles.selected : ''}`}
-                  onMouseEnter={() => handleMouseEnter(roomNumber)}
+                  onMouseEnter={() => handleMouseEnter(roomInfo.roomNumber)}
                   onMouseLeave={handleMouseLeave}
-                  onClick={() => handleRoomSelect(roomNumber)}
+                  onClick={() => handleRoomSelect(roomInfo.roomNumber, roomInfo.basePrice)}
                 >
                   <div className={styles.roomHeader}>
-                    <div className={styles.roomNumber}>Camera {roomNumber}</div>
-                    {roomInfo && <div className={styles.roomType}>{roomInfo.type}</div>}
+                    <div className={styles.roomNumber}>Camera {roomInfo.roomNumber}</div>
+                    <div className={styles.roomType}>{roomInfo.type}</div>
                   </div>
-                  {roomInfo && (
-                    <div className={styles.roomBasePrice}>
-                      Preț de bază: {roomInfo.basePrice} RON/noapte
-                    </div>
-                  )}
+                  <div className={styles.roomBasePrice}>
+                    Preț de bază: {roomInfo.basePrice} RON/noapte
+                  </div>
                 </div>
               );
             })}
@@ -209,48 +225,54 @@ const ReservationDetails = ({ reservationData, setReservationData, options }) =>
         {selectedRooms.length > 0 && (
           <div className={styles.selectedRooms}>
             <h5>🎯 Camere Selectate</h5>
-            {selectedRooms.map((room) => (
-              <div key={room.roomNumber} className={styles.selectedRoomCard}>
-                <div className={styles.selectedRoomHeader}>
-                  <h6>Camera {room.roomNumber} - {getRoomInfo(room.roomNumber)?.type}</h6>
-                  <button 
-                    onClick={() => handleRoomSelect(room.roomNumber)}
-                    className={styles.removeRoomButton}
-                  >
-                    ✖
-                  </button>
+            {selectedRooms.map((room) => {
+              const roomInfo = options
+                .map(extractRoomInfo)
+                .find(info => info?.roomNumber === room.roomNumber);
+
+              return (
+                <div key={room.roomNumber} className={styles.selectedRoomCard}>
+                  <div className={styles.selectedRoomHeader}>
+                    <h6>Camera {room.roomNumber} - {roomInfo?.type}</h6>
+                    <button 
+                      onClick={() => handleRoomSelect(room.roomNumber)}
+                      className={styles.removeRoomButton}
+                    >
+                      ✖
+                    </button>
+                  </div>
+                  <div className={styles.selectedRoomDetails}>
+                    <div className={styles.reservationField}>
+                      <label>Check-in:</label>
+                      <input
+                        type="date"
+                        value={room.startDate || reservationData?.startDate || ""}
+                        onChange={(e) => handleRoomPeriodChange(room.roomNumber, 'startDate', e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                    <div className={styles.reservationField}>
+                      <label>Check-out:</label>
+                      <input
+                        type="date"
+                        value={room.endDate || reservationData?.endDate || ""}
+                        onChange={(e) => handleRoomPeriodChange(room.roomNumber, 'endDate', e.target.value)}
+                        min={room.startDate || new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                    <div className={styles.reservationField}>
+                      <label>Preț/noapte:</label>
+                      <input
+                        type="number"
+                        value={room.price || roomInfo?.basePrice || ""}
+                        onChange={(e) => handleRoomPriceChange(room.roomNumber, e.target.value)}
+                        placeholder="Preț/noapte"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className={styles.selectedRoomDetails}>
-                  <div className={styles.reservationField}>
-                    <label>Check-in:</label>
-                    <input
-                      type="date"
-                      value={room.startDate || reservationData?.startDate || ""}
-                      onChange={(e) => handleRoomPeriodChange(room.roomNumber, 'startDate', e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                  <div className={styles.reservationField}>
-                    <label>Check-out:</label>
-                    <input
-                      type="date"
-                      value={room.endDate || reservationData?.endDate || ""}
-                      onChange={(e) => handleRoomPeriodChange(room.roomNumber, 'endDate', e.target.value)}
-                      min={room.startDate || new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                  <div className={styles.reservationField}>
-                    <label>Preț/noapte:</label>
-                    <input
-                      type="number"
-                      value={room.price}
-                      onChange={(e) => handleRoomPriceChange(room.roomNumber, e.target.value)}
-                      placeholder="Preț/noapte"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -274,7 +296,11 @@ const ReservationDetails = ({ reservationData, setReservationData, options }) =>
             <input
               type="checkbox"
               checked={paymentStatus.isPaid}
-              onChange={(e) => setPaymentStatus({ ...paymentStatus, isPaid: e.target.checked })}
+              onChange={(e) => {
+                const newStatus = { ...paymentStatus, isPaid: e.target.checked };
+                setPaymentStatus(newStatus);
+                setReservationData({ ...reservationData, ...newStatus });
+              }}
             />
             Achitat
           </label>
@@ -282,7 +308,11 @@ const ReservationDetails = ({ reservationData, setReservationData, options }) =>
             <input
               type="checkbox"
               checked={paymentStatus.hasReceipt}
-              onChange={(e) => setPaymentStatus({ ...paymentStatus, hasReceipt: e.target.checked })}
+              onChange={(e) => {
+                const newStatus = { ...paymentStatus, hasReceipt: e.target.checked };
+                setPaymentStatus(newStatus);
+                setReservationData({ ...reservationData, ...newStatus });
+              }}
             />
             Bon Fiscal
           </label>
@@ -290,7 +320,11 @@ const ReservationDetails = ({ reservationData, setReservationData, options }) =>
             <input
               type="checkbox"
               checked={paymentStatus.hasInvoice}
-              onChange={(e) => setPaymentStatus({ ...paymentStatus, hasInvoice: e.target.checked })}
+              onChange={(e) => {
+                const newStatus = { ...paymentStatus, hasInvoice: e.target.checked };
+                setPaymentStatus(newStatus);
+                setReservationData({ ...reservationData, ...newStatus });
+              }}
             />
             Factură
           </label>
@@ -299,11 +333,19 @@ const ReservationDetails = ({ reservationData, setReservationData, options }) =>
 
       {/* Butoane Acțiuni */}
       <div className={styles.actionButtons}>
-        <button onClick={handleSave} className={styles.saveButton}>
-          💾 Salvează
+        <button 
+          className={styles.saveButton} 
+          onClick={handleSave}
+        >
+          <IconDeviceFloppy size={16} />
+          Salvează și finalizează
         </button>
-        <button onClick={() => setReservationData({})} className={styles.cancelButton}>
-          ↩ Renunță
+        <button 
+          className={styles.cancelButton} 
+          onClick={onFinalize}
+        >
+          <IconX size={16} />
+          Renunță
         </button>
         <button onClick={handleDelete} className={styles.deleteButton}>
           🗑️ Șterge
