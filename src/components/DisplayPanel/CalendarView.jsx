@@ -16,7 +16,7 @@ function generateDatesArray(startDate, endDate) {
 
 const CalendarView = () => {
   const { rooms, reservations, startDate, endDate, setDateRange, fetchRooms } = useCalendarStore();
-  const { highlightedRoom, selectedPeriod } = useRoomOptionsStore();
+  const { highlightedRoom, selectedRooms } = useRoomOptionsStore();
   const [days, setDays] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -81,14 +81,20 @@ const CalendarView = () => {
     };
   }, []);
 
-  // Verificăm dacă o zi este în perioada selectată
+  // Verificăm dacă o zi este în perioada selectată pentru o cameră
   const isInSelectedPeriod = (date, roomNumber) => {
-    if (!selectedPeriod.startDate || !selectedPeriod.endDate || !highlightedRoom || highlightedRoom !== roomNumber) {
+    if (!highlightedRoom || highlightedRoom !== roomNumber) {
       return false;
     }
+    
+    const selectedRoom = selectedRooms.find(room => room.roomNumber === roomNumber);
+    if (!selectedRoom?.startDate || !selectedRoom?.endDate) {
+      return false;
+    }
+
     const currentDate = new Date(date);
-    const start = new Date(selectedPeriod.startDate);
-    const end = new Date(selectedPeriod.endDate);
+    const start = new Date(selectedRoom.startDate);
+    const end = new Date(selectedRoom.endDate);
     return currentDate >= start && currentDate < end;
   };
 

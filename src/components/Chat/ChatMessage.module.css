@@ -39,28 +39,193 @@
 }
 
 .reservationDetails {
-  background-color: #fff3cd;
-  border: 1px solid #ffeeba;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 6px;
+  background-color: #2b2b2b;
+  border: 1px solid #444;
+  padding: 16px;
+  margin-top: 12px;
+  border-radius: 8px;
+  color: #e0e0e0;
 }
 
 .reservationField {
   display: flex;
   flex-direction: column;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .reservationField label {
   font-size: 14px;
-  font-weight: bold;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #bbb;
 }
 
-.reservationField input {
-  padding: 6px;
+.reservationField input,
+.reservationField select,
+.reservationField textarea {
+  padding: 8px;
   border-radius: 4px;
-  border: 1px solid #ccc;
+  border: 1px solid #444;
+  background-color: #1e1e1e;
+  color: #fff;
+  font-size: 14px;
+}
+
+.reservationField input[type="checkbox"] {
+  margin-right: 8px;
+  width: auto;
+}
+
+.roomsSection {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: #1e1e1e;
+}
+
+.roomCard {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background-color: #2b2b2b;
+  transition: all 0.3s ease;
+}
+
+.roomCard.active {
+  border-color: #007bff;
+  box-shadow: 0 0 0 1px #007bff;
+}
+
+.roomHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.roomHeader h6 {
+  margin: 0;
+  color: #fff;
+  font-size: 16px;
+}
+
+.roomType {
+  font-size: 14px;
+  color: #007bff;
+  font-weight: 500;
+}
+
+.roomBasePrice {
+  font-size: 14px;
+  color: #28a745;
+  margin-bottom: 8px;
+}
+
+.addRoomButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.addRoomButton:hover {
+  background-color: #218838;
+}
+
+.removeRoomButton {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.removeRoomButton:hover {
+  background-color: #c82333;
+}
+
+.roomDetails {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.paymentSection {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: #1e1e1e;
+}
+
+.paymentOptions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.paymentOptions label {
+  display: flex;
+  align-items: center;
+  color: #bbb;
+  font-size: 14px;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.saveButton,
+.cancelButton,
+.deleteButton {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.saveButton {
+  background-color: #28a745;
+  color: white;
+}
+
+.saveButton:hover {
+  background-color: #218838;
+}
+
+.cancelButton {
+  background-color: #6c757d;
+  color: white;
+}
+
+.cancelButton:hover {
+  background-color: #5a6268;
+}
+
+.deleteButton {
+  background-color: #dc3545;
+  color: white;
+}
+
+.deleteButton:hover {
+  background-color: #c82333;
 }
 
 .warning {
@@ -82,4 +247,120 @@
   font-size: 0.9em;
   color: #dc3545;
   margin-left: 0.5rem;
+}
+
+.roomOptionsWrapper {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #444;
+}
+
+.roomOptionsWrapper h4 {
+  font-size: 14px;
+  color: #bbb;
+  margin-bottom: 8px;
+}
+
+.globalPeriod {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+}
+
+.availableRooms {
+  margin-top: 16px;
+}
+
+.roomsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.roomOption {
+  padding: 16px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: #2b2b2b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.roomOption:not(.unavailable):hover {
+  border-color: #007bff;
+  transform: translateY(-2px);
+}
+
+.roomOption.selected {
+  border-color: #28a745;
+  background-color: rgba(40, 167, 69, 0.1);
+}
+
+.roomOption.unavailable {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #dc3545;
+}
+
+.roomNumber {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.roomStatus {
+  font-size: 14px;
+  color: #bbb;
+}
+
+.roomCustomization {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #444;
+}
+
+.roomCustomization input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background-color: #1e1e1e;
+  color: #fff;
+}
+
+.selectedRooms {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #444;
+}
+
+.selectedRoomCard {
+  background-color: #2b2b2b;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.selectedRoomHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.selectedRoomHeader h6 {
+  margin: 0;
+  font-size: 16px;
+  color: #fff;
+}
+
+.selectedRoomDetails {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
 }

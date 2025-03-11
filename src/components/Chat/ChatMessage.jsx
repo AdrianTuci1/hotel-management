@@ -5,62 +5,31 @@ import useRoomOptionsStore from "../../store/roomOptionsStore";
 import { useCalendarStore } from "../../store/calendarStore";
 import apiService from "../../actions/apiService";
 import ReservationDetails from "./ReservationDetails";
-import RoomOptions from "./RoomOptions";
 
 const ChatMessage = ({ text, type, options, reservation }) => {
   const addMessage = useChatStore((state) => state.addMessage);
   const [reservationData, setReservationData] = useState(reservation || {});
-  const { setSelectedPeriod } = useRoomOptionsStore();
+  const { addRoom, updateRoomPeriod } = useRoomOptionsStore();
   const { updateViewPeriod, setReservations } = useCalendarStore();
 
   // Inițializăm perioada de vizualizare când primim datele rezervării
   useEffect(() => {
-    if (reservation?.startDate) {
+    if (reservation?.startDate && reservation?.roomNumber) {
       updateViewPeriod(reservation.startDate, reservation.endDate);
-      setSelectedPeriod(reservation.startDate, reservation.endDate);
+      // Adăugăm camera și actualizăm perioada ei
+      addRoom(reservation.roomNumber);
+      updateRoomPeriod(reservation.roomNumber, reservation.startDate, reservation.endDate);
     }
   }, [reservation]);
 
   if (!text) return null;
 
-  const handleOptionSelect = async (option) => {
-    addMessage({ text: `✅ Ai selectat: ${option}`, type: "user" });
-  
-    if (!reservationData || Object.keys(reservationData).length === 0) {
-      addMessage({ text: "❌ Informații insuficiente pentru rezervare!", type: "bot" });
-      return;
-    }
-  
-    const roomNumberMatch = option.match(/\d+/);
-    if (!roomNumberMatch) {
-      console.error("❌ Nu s-a putut extrage numărul camerei din opțiune:", option);
-      addMessage({ text: "❌ Eroare la selectarea camerei!", type: "bot" });
-      return;
-    }
-    const roomNumber = roomNumberMatch[0];
-  
-    const updatedReservation = {
-      ...reservationData,
-      roomNumber,
-    };
-  
-    console.log("📩 Rezervare trimisă către API:", JSON.stringify(updatedReservation, null, 2));
-  
-    try {
-      const response = await apiService.createReservation(updatedReservation);
-      console.log("✅ Răspuns API:", response);
-      addMessage({ text: `✅ ${response.message}`, type: "bot" });
-    } catch (error) {
-      console.error("❌ Eroare API:", error);
-      addMessage({ text: "❌ Eroare la procesarea rezervării!", type: "bot" });
-    }
-  };
-
   const handleReservationDataChange = (newData) => {
     setReservationData(newData);
-    if (newData.startDate && newData.endDate) {
-      setSelectedPeriod(newData.startDate, newData.endDate);
+    if (newData.startDate && newData.endDate && newData.roomNumber) {
       updateViewPeriod(newData.startDate, newData.endDate);
+      // Actualizăm perioada pentru camera selectată
+      updateRoomPeriod(newData.roomNumber, newData.startDate, newData.endDate);
     }
   };
 
@@ -72,13 +41,7 @@ const ChatMessage = ({ text, type, options, reservation }) => {
         <ReservationDetails 
           reservationData={reservationData}
           setReservationData={handleReservationDataChange}
-        />
-      )}
-
-      {type === "options" && options?.length > 0 && (
-        <RoomOptions 
           options={options}
-          onOptionSelect={handleOptionSelect}
         />
       )}
     </div>

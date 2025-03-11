@@ -48,6 +48,11 @@ export const connectSocket = () => {
         setReservations(payload);
       } 
       
+      else if (type === "reservations_update") {
+        console.log("🔄 Actualizare rezervări primită:", payload);
+        setReservations(payload);
+      }
+      
       else if (type === "status") {
         console.log(`ℹ️ WebSocket Status: ${payload}`);
       } 

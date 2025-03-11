@@ -1,158 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAssistantStore } from '../../store/assistantStore';
 import styles from './AssistantsView.module.css';
 
-const PlatformIcons = {
-  whatsapp: '📱',
-  email: '📧',
-  booking: '🏨',
-};
-
-const ConnectionModal = ({ platform, onClose, onConnect }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [credentials, setCredentials] = useState({
-    whatsapp: { phoneNumber: '', apiKey: '' },
-    email: { email: '', password: '', server: 'imap.gmail.com' }
-  });
-
-  const handleConnect = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await onConnect(platform, credentials[platform]);
-      onClose();
-    } catch (error) {
-      setError(error.message || 'A apărut o eroare la conectare. Vă rugăm încercați din nou.');
-    }
-    setLoading(false);
-  };
-
-  const isFormValid = () => {
-    if (platform === 'whatsapp') {
-      return credentials.whatsapp.phoneNumber && credentials.whatsapp.apiKey;
-    }
-    if (platform === 'email') {
-      return credentials.email.email && credentials.email.password && credentials.email.server;
-    }
-    return false;
-  };
-
-  return (
-    <>
-      <div className={styles.modalOverlay} onClick={onClose} />
-      <div className={styles.modal}>
-        <div className={styles.modalHeader}>
-          <h3>
-            <span>{PlatformIcons[platform]}</span>
-            Conectare {platform.charAt(0).toUpperCase() + platform.slice(1)}
-          </h3>
-          <button className={styles.closeButton} onClick={onClose}>&times;</button>
-        </div>
-        <div className={styles.modalContent}>
-          <div className={styles.platformStatus}>
-            <span className={`${styles.statusIcon} ${styles.disconnected}`} />
-            <span className={styles.platformName}>Deconectat</span>
-          </div>
-
-          {error && (
-            <div className={styles.error}>
-              {error}
-            </div>
-          )}
-
-          {platform === 'whatsapp' && (
-            <>
-              <div className={styles.formGroup}>
-                <label>Număr de telefon</label>
-                <input
-                  type="text"
-                  value={credentials.whatsapp.phoneNumber}
-                  onChange={(e) => setCredentials({
-                    ...credentials,
-                    whatsapp: { ...credentials.whatsapp, phoneNumber: e.target.value }
-                  })}
-                  placeholder="+40712345678"
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>API Key</label>
-                <input
-                  type="password"
-                  value={credentials.whatsapp.apiKey}
-                  onChange={(e) => setCredentials({
-                    ...credentials,
-                    whatsapp: { ...credentials.whatsapp, apiKey: e.target.value }
-                  })}
-                  placeholder="Introduceți API key-ul"
-                />
-              </div>
-            </>
-          )}
-
-          {platform === 'email' && (
-            <>
-              <div className={styles.formGroup}>
-                <label>Email</label>
-                <input
-                  type="email"
-                  value={credentials.email.email}
-                  onChange={(e) => setCredentials({
-                    ...credentials,
-                    email: { ...credentials.email, email: e.target.value }
-                  })}
-                  placeholder="hotel@example.com"
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Parolă</label>
-                <input
-                  type="password"
-                  value={credentials.email.password}
-                  onChange={(e) => setCredentials({
-                    ...credentials,
-                    email: { ...credentials.email, password: e.target.value }
-                  })}
-                  placeholder="Introduceți parola"
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label>Server IMAP</label>
-                <input
-                  type="text"
-                  value={credentials.email.server}
-                  onChange={(e) => setCredentials({
-                    ...credentials,
-                    email: { ...credentials.email, server: e.target.value }
-                  })}
-                />
-              </div>
-            </>
-          )}
-
-          <button 
-            className={styles.connectButton}
-            onClick={handleConnect}
-            disabled={loading || !isFormValid()}
-          >
-            {loading ? (
-              <>
-                <span className={styles.loadingSpinner} />
-                Se conectează...
-              </>
-            ) : (
-              'Conectează'
-            )}
-          </button>
-        </div>
-      </div>
-    </>
-  );
-};
-
 const AssistantsView = () => {
-  const { assistants, toggleAssistant, updateAssistantConfig, connectPlatform } = useAssistantStore();
-  const [connectionModal, setConnectionModal] = useState({ open: false, platform: null });
+  const { assistants, toggleAssistant, updateAssistantConfig } = useAssistantStore();
 
   const handleToggle = (assistantId) => {
     toggleAssistant(assistantId);
@@ -160,29 +11,6 @@ const AssistantsView = () => {
 
   const handleConfigUpdate = (assistantId, config) => {
     updateAssistantConfig(assistantId, config);
-  };
-
-  const handleConnect = async (platform, credentials) => {
-    try {
-      await connectPlatform('reservation', platform, credentials);
-    } catch (error) {
-      console.error('Failed to connect platform:', error);
-    }
-  };
-
-  const renderPlatform = (platform) => {
-    const isConnected = assistants.reservation.config.connectedPlatforms?.includes(platform);
-    return (
-      <div 
-        key={platform}
-        className={`${styles.platform} ${isConnected ? styles.connected : styles.disconnected}`}
-        onClick={() => setConnectionModal({ open: true, platform })}
-      >
-        <span>{PlatformIcons[platform]}</span>
-        {platform}
-        {!isConnected && <button className={styles.connectButton}>Conectează</button>}
-      </div>
-    );
   };
 
   return (
@@ -224,9 +52,11 @@ const AssistantsView = () => {
               />
             </div>
             <div className={styles.configItem}>
-              <label>Platforme</label>
+              <label>Platforme conectate</label>
               <div className={styles.platformsList}>
-                {['whatsapp', 'email'].map(renderPlatform)}
+                {assistants.reservation.config.platforms.map(platform => (
+                  <span key={platform} className={styles.platform}>{platform}</span>
+                ))}
               </div>
             </div>
           </div>
@@ -307,14 +137,6 @@ const AssistantsView = () => {
           </div>
         </div>
       </div>
-
-      {connectionModal.open && (
-        <ConnectionModal
-          platform={connectionModal.platform}
-          onClose={() => setConnectionModal({ open: false, platform: null })}
-          onConnect={handleConnect}
-        />
-      )}
     </div>
   );
 };

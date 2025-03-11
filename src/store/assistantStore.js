@@ -22,8 +22,6 @@ const initialState = {
       isActive: true,
       config: {
         platforms: ['whatsapp', 'email', 'booking'],
-        connectedPlatforms: [], // Platforme conectate
-        platformCredentials: {}, // Credențiale pentru fiecare platformă
         autoConfirm: false,
         priceRange: { min: 0, max: 1000 },
         responseTemplates: {
@@ -32,12 +30,6 @@ const initialState = {
           unavailable: 'Ne pare rău, nu avem disponibilitate pentru perioada solicitată.',
         },
       },
-      metrics: {
-        reservationsToday: 0,
-        averageResponseTime: 0,
-        totalReservations: 0,
-        successRate: 0,
-      }
     },
     reporting: {
       id: 'reporting',
@@ -56,12 +48,6 @@ const initialState = {
           revenue: { threshold: 5000, enabled: true },
         },
       },
-      metrics: {
-        currentOccupancy: 0,
-        priceAdjustments: 0,
-        revenueIncrease: 0,
-        alertsSent: 0,
-      }
     },
   },
   activeConversation: null,
@@ -179,132 +165,4 @@ export const useAssistantStore = create((set, get) => ({
       console.error('Error executing assistant command:', error);
     }
   },
-
-  // Conectare platformă
-  connectPlatform: async (assistantId, platform, credentials) => {
-    try {
-      // Aici vom implementa logica de conectare specifică fiecărei platforme
-      const connection = await connectToPlatform(platform, credentials);
-      
-      set(state => ({
-        assistants: {
-          ...state.assistants,
-          [assistantId]: {
-            ...state.assistants[assistantId],
-            config: {
-              ...state.assistants[assistantId].config,
-              connectedPlatforms: [
-                ...state.assistants[assistantId].config.connectedPlatforms,
-                platform
-              ],
-              platformCredentials: {
-                ...state.assistants[assistantId].config.platformCredentials,
-                [platform]: credentials
-              }
-            },
-          },
-        },
-      }));
-
-      return connection;
-    } catch (error) {
-      console.error(`Failed to connect to ${platform}:`, error);
-      throw error;
-    }
-  },
-
-  // Deconectare platformă
-  disconnectPlatform: async (assistantId, platform) => {
-    try {
-      // Aici vom implementa logica de deconectare
-      await disconnectFromPlatform(platform);
-      
-      set(state => ({
-        assistants: {
-          ...state.assistants,
-          [assistantId]: {
-            ...state.assistants[assistantId],
-            config: {
-              ...state.assistants[assistantId].config,
-              connectedPlatforms: state.assistants[assistantId].config.connectedPlatforms
-                .filter(p => p !== platform),
-              platformCredentials: {
-                ...state.assistants[assistantId].config.platformCredentials,
-                [platform]: undefined
-              }
-            },
-          },
-        },
-      }));
-    } catch (error) {
-      console.error(`Failed to disconnect from ${platform}:`, error);
-      throw error;
-    }
-  },
-
-  // Actualizare metrici
-  updateMetrics: (assistantId, metrics) => {
-    set(state => ({
-      assistants: {
-        ...state.assistants,
-        [assistantId]: {
-          ...state.assistants[assistantId],
-          metrics: {
-            ...state.assistants[assistantId].metrics,
-            ...metrics,
-          },
-        },
-      },
-    }));
-  },
-}));
-
-// Funcții helper pentru conectarea la platforme
-const connectToPlatform = async (platform, credentials) => {
-  switch (platform) {
-    case 'whatsapp':
-      // Implementare conectare WhatsApp
-      return await connectWhatsApp(credentials);
-    case 'email':
-      // Implementare conectare Email
-      return await connectEmail(credentials);
-    default:
-      throw new Error(`Platform ${platform} not supported`);
-  }
-};
-
-const disconnectFromPlatform = async (platform) => {
-  switch (platform) {
-    case 'whatsapp':
-      // Implementare deconectare WhatsApp
-      return await disconnectWhatsApp();
-    case 'email':
-      // Implementare deconectare Email
-      return await disconnectEmail();
-    default:
-      throw new Error(`Platform ${platform} not supported`);
-  }
-};
-
-// Funcții mock pentru conectare (vor fi înlocuite cu implementări reale)
-const connectWhatsApp = async (credentials) => {
-  // Simulăm o conectare
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return { success: true };
-};
-
-const connectEmail = async (credentials) => {
-  // Simulăm o conectare
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return { success: true };
-};
-
-const disconnectWhatsApp = async () => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return { success: true };
-};
-
-const disconnectEmail = async () => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return { success: true };
-}; 
+})); 

@@ -3,14 +3,18 @@ import styles from "./ChatMessage.module.css";
 import useRoomOptionsStore from "../../store/roomOptionsStore";
 import { useCalendarStore } from "../../store/calendarStore";
 
-const RoomOptions = ({ options, onOptionSelect }) => {
+const RoomOptions = ({ options, onOptionSelect, reservation }) => {
   const { 
     setHighlightedRoom, 
     clearHighlightedRoom,
-    selectedPeriod 
+    selectedRooms,
+    addRoom,
+    removeRoom,
+    updateRoomPeriod,
+    updateRoomPrice,
+    isRoomAvailable,
+    getRoomInfo
   } = useRoomOptionsStore();
-
-  const { isRoomAvailable, getAvailableRooms } = useCalendarStore();
 
   const handleMouseEnter = (option) => {
     const roomNumber = option.match(/\d+/)?.[0];
@@ -27,26 +31,33 @@ const RoomOptions = ({ options, onOptionSelect }) => {
     const roomNumber = option.match(/\d+/)?.[0];
     if (!roomNumber) return;
 
-    if (!selectedPeriod.startDate || !selectedPeriod.endDate) {
-      alert("❌ Te rog selectează perioada de cazare înainte de a alege camera!");
-      return;
-    }
-
-    if (!isRoomAvailable(roomNumber, selectedPeriod.startDate, selectedPeriod.endDate)) {
-      alert("❌ Camera nu este disponibilă pentru perioada selectată!");
-      return;
+    const room = selectedRooms.find(r => r.roomNumber === roomNumber);
+    if (room) {
+      removeRoom(roomNumber);
+    } else {
+      // Adăugăm camera cu perioada predefinită din rezervare dacă există
+      addRoom(roomNumber, reservation?.startDate, reservation?.endDate);
     }
 
     onOptionSelect(option);
   };
 
-  const getAvailabilityMessage = (roomNumber) => {
-    if (!selectedPeriod.startDate || !selectedPeriod.endDate) {
-      return "⚠️ Selectează perioada";
+  const handleRoomPeriodChange = (roomNumber, field, value) => {
+    const room = selectedRooms.find(r => r.roomNumber === roomNumber);
+    if (!room) return;
+
+    const startDate = field === 'startDate' ? value : room.startDate;
+    const endDate = field === 'endDate' ? value : room.endDate;
+    
+    if (isRoomAvailable(roomNumber, startDate, endDate)) {
+      updateRoomPeriod(roomNumber, startDate, endDate);
+    } else {
+      alert("❌ Camera nu este disponibilă pentru perioada selectată!");
     }
-    return isRoomAvailable(roomNumber, selectedPeriod.startDate, selectedPeriod.endDate) 
-      ? "✅ Disponibilă" 
-      : "❌ Indisponibilă";
+  };
+
+  const handleRoomPriceChange = (roomNumber, value) => {
+    updateRoomPrice(roomNumber, value);
   };
 
   // Filtrăm opțiunile pentru a arăta doar camerele disponibile primele
@@ -54,47 +65,97 @@ const RoomOptions = ({ options, onOptionSelect }) => {
     const roomNumberA = a.match(/\d+/)?.[0];
     const roomNumberB = b.match(/\d+/)?.[0];
     
-    if (!selectedPeriod.startDate || !selectedPeriod.endDate) return 0;
+    if (!roomNumberA || !roomNumberB) return 0;
     
-    const isAvailableA = roomNumberA ? isRoomAvailable(roomNumberA, selectedPeriod.startDate, selectedPeriod.endDate) : false;
-    const isAvailableB = roomNumberB ? isRoomAvailable(roomNumberB, selectedPeriod.startDate, selectedPeriod.endDate) : false;
+    const roomA = selectedRooms.find(r => r.roomNumber === roomNumberA);
+    const roomB = selectedRooms.find(r => r.roomNumber === roomNumberB);
     
-    if (isAvailableA === isAvailableB) return 0;
-    return isAvailableA ? -1 : 1;
+    if (roomA && !roomB) return -1;
+    if (!roomA && roomB) return 1;
+    return 0;
   });
 
   return (
     <div className={styles.optionsContainer}>
-      <h4>🛏️ Selectează o cameră</h4>
-      {!selectedPeriod.startDate || !selectedPeriod.endDate ? (
-        <div className={styles.warning}>
-          ⚠️ Te rog selectează perioada de cazare înainte de a alege camera
-        </div>
-      ) : null}
-      {sortedOptions.map((option, index) => {
-        const roomNumber = option.match(/\d+/)?.[0];
-        const isAvailable = roomNumber && selectedPeriod.startDate && selectedPeriod.endDate
-          ? isRoomAvailable(roomNumber, selectedPeriod.startDate, selectedPeriod.endDate)
-          : true;
-        const availabilityMessage = getAvailabilityMessage(roomNumber);
-        
-        return (
-          <div key={index} className={styles.optionWrapper}>
-            <button
-              className={`${styles.optionButton} ${!isAvailable ? styles.unavailable : ''}`}
-              onClick={() => handleOptionClick(option)}
+      <h4>🛏️ Selectează camere</h4>
+      
+      <div className={styles.roomsGrid}>
+        {sortedOptions.map((option, index) => {
+          const roomNumber = option.match(/\d+/)?.[0];
+          if (!roomNumber) return null;
+
+          const roomInfo = getRoomInfo(roomNumber, options);
+          const isSelected = selectedRooms.some(r => r.roomNumber === roomNumber);
+          
+          return (
+            <div 
+              key={index}
+              className={`${styles.roomOption} ${isSelected ? styles.selected : ''}`}
               onMouseEnter={() => handleMouseEnter(option)}
               onMouseLeave={handleMouseLeave}
-              disabled={!isAvailable}
+              onClick={() => handleOptionClick(option)}
             >
-              {option}
-            </button>
-            <span className={`${styles.availabilityStatus} ${!isAvailable ? styles.unavailableText : styles.availableText}`}>
-              {availabilityMessage}
-            </span>
-          </div>
-        );
-      })}
+              <div className={styles.roomHeader}>
+                <div className={styles.roomNumber}>Camera {roomNumber}</div>
+                {roomInfo && <div className={styles.roomType}>{roomInfo.type}</div>}
+              </div>
+              {roomInfo && (
+                <div className={styles.roomBasePrice}>
+                  Preț de bază: {roomInfo.basePrice} RON/noapte
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {selectedRooms.length > 0 && (
+        <div className={styles.selectedRooms}>
+          <h5>🎯 Camere Selectate</h5>
+          {selectedRooms.map((room) => (
+            <div key={room.roomNumber} className={styles.selectedRoomCard}>
+              <div className={styles.selectedRoomHeader}>
+                <h6>Camera {room.roomNumber} - {getRoomInfo(room.roomNumber, options)?.type}</h6>
+                <button 
+                  onClick={() => removeRoom(room.roomNumber)}
+                  className={styles.removeRoomButton}
+                >
+                  ✖
+                </button>
+              </div>
+              <div className={styles.selectedRoomDetails}>
+                <div className={styles.reservationField}>
+                  <label>Check-in:</label>
+                  <input
+                    type="date"
+                    value={room.startDate || reservation?.startDate || ""}
+                    onChange={(e) => handleRoomPeriodChange(room.roomNumber, 'startDate', e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                <div className={styles.reservationField}>
+                  <label>Check-out:</label>
+                  <input
+                    type="date"
+                    value={room.endDate || reservation?.endDate || ""}
+                    onChange={(e) => handleRoomPeriodChange(room.roomNumber, 'endDate', e.target.value)}
+                    min={room.startDate || new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                <div className={styles.reservationField}>
+                  <label>Preț/noapte:</label>
+                  <input
+                    type="number"
+                    value={room.price}
+                    onChange={(e) => handleRoomPriceChange(room.roomNumber, e.target.value)}
+                    placeholder="Preț/noapte"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
