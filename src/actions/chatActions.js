@@ -15,13 +15,14 @@ export const connectSocket = () => {
       console.log("📩 Răspuns WebSocket din Worker:", event.data);
 
       if (type === "chat_response" && payload.response) {
-        const { intent, message, type: msgType, options, formFields, extraIntents } = payload.response;
+        const { intent, message, type: msgType, options, formFields, extraIntents, reservation } = payload.response;
 
         // 🔹 Adăugăm răspunsul în chat
         addMessage({
           text: message,
           type: msgType || "bot",
           options: options || null,
+          reservation: reservation || null,
           formFields: formFields || null,
         });
 

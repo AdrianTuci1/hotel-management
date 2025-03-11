@@ -42,6 +42,11 @@
     padding: 0.5rem;
     text-align: center;
     white-space: nowrap;
+    transition: background-color 0.2s ease;
+  }
+  
+  .highlightedRoom {
+    background-color: rgba(0, 123, 255, 0.2);
   }
   
   .dayCell {
@@ -50,22 +55,31 @@
     padding: 0.5rem;
     min-width: 80px;
     white-space: nowrap;
+    transition: background-color 0.2s ease;
   }
   
-  .occupied {
-    background: #a03535;
-    color: #fff;
+  .highlighted {
+    background-color: rgba(0, 123, 255, 0.1);
+    position: relative;
   }
-
-
-  /* 🔴 Cameră ocupată (booked) */
-.booked{
-  background: red;
-  color: white;
-}
-
-/* 🟡 Cameră rezervată dar neconfirmată (confirmed) */
-.confirmed{
-  background: yellow;
-  color: black;
-}
+  
+  .highlighted::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px solid rgba(0, 123, 255, 0.5);
+    pointer-events: none;
+  }
+  
+  .booked {
+    background: rgba(255, 0, 0, 0.5);
+    color: white;
+  }
+  
+  .confirmed {
+    background: rgba(255, 255, 0, 0.3);
+    color: black;
+  }
