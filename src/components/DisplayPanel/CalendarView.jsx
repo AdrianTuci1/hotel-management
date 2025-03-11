@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useCalendarStore } from "../../store/calendarStore";
 import useRoomOptionsStore from "../../store/roomOptionsStore";
 import styles from "./CalendarView.module.css";
@@ -18,11 +18,57 @@ const CalendarView = () => {
   const { rooms, reservations, startDate, endDate, setDateRange, fetchRooms } = useCalendarStore();
   const { highlightedRoom, selectedPeriod } = useRoomOptionsStore();
   const [days, setDays] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
+  const tableWrapperRef = useRef(null);
 
   useEffect(() => {
     fetchRooms();
     setDays(generateDatesArray(startDate, endDate));
   }, [startDate, endDate]);
+
+  const handleMouseDown = (e) => {
+    if (e.button === 0) { // doar click stânga
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX + tableWrapperRef.current.scrollLeft,
+        y: e.clientY + tableWrapperRef.current.scrollTop
+      });
+      setScrollPosition({
+        x: tableWrapperRef.current.scrollLeft,
+        y: tableWrapperRef.current.scrollTop
+      });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+
+    const dx = dragStart.x - e.clientX;
+    const dy = dragStart.y - e.clientY;
+
+    if (tableWrapperRef.current) {
+      tableWrapperRef.current.scrollLeft = dx;
+      tableWrapperRef.current.scrollTop = dy;
+    }
+
+    e.preventDefault();
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Curățăm evenimentele când componenta este demontată
+  useEffect(() => {
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mouseleave', handleMouseUp);
+    return () => {
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mouseleave', handleMouseUp);
+    };
+  }, []);
 
   // Verificăm dacă o zi este în perioada selectată
   const isInSelectedPeriod = (date, roomNumber) => {
@@ -70,7 +116,13 @@ const CalendarView = () => {
         <input type="date" value={endDate} onChange={(e) => setDateRange(startDate, e.target.value)} />
       </div>
 
-      <div className={styles.tableWrapper}>
+      <div 
+        className={`${styles.tableWrapper} ${isDragging ? styles.dragging : ''}`}
+        ref={tableWrapperRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      >
         <table className={styles.calendarTable}>
           <thead>
             <tr>

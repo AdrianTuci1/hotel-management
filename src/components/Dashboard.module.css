@@ -1,26 +1,144 @@
 .dashboardContainer {
     display: flex;
     width: 100%;
-    height: 100vh;
-    background-color: #1e1e1e;
-    transition: all 0.3s ease-in-out;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
   }
   
-  .chatFull {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+  .chatContainer {
+    height: 100%;
+    position: relative;
+    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%; /* Default width when alone */
+    background: #2b2b2b;
+    will-change: width;
+    overflow: auto;
+  }
+  
+  .chatContainer.chatWithPanel {
+    min-width: 30%;
+    max-width: 70%;
+    width: auto; /* Allow the width to be controlled by the resizer when in panel mode */
+  }
+  
+  .chatContainer.resizing {
+    transition: none;
   }
   
   .chatWithPanel {
-    flex: 0.6; /* Chat-ul ocupă 60% când panoul este activ */
+    border-right: none;
+  }
+  
+  .receptionOverlay {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100%);
+    top: 0;
+    width: min(900px, 95%);
+    height: min(600px, 60vh);
+    background: #1e1e1e;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    border-radius: 0 0 12px 12px;
+    border: 1px solid #444;
+    border-top: none;
+    padding: 20px;
+    z-index: 5;
+  }
+  
+  .receptionOverlay::after {
+    content: "⌄";
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+  
+  .chatContainer:hover .receptionOverlay {
+    transform: translateX(-50%) translateY(0);
+  }
+  
+  .chatContainer:hover .receptionOverlay::after {
+    color: #888;
+  }
+  
+  .resizer {
+    width: 12px;
+    cursor: col-resize;
+    height: 100%;
+    background: transparent;
+    position: relative;
+    z-index: 10;
+    touch-action: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 -6px;
+    flex-shrink: 0;
+  }
+  
+  .resizerLine {
+    position: absolute;
+    width: 2px;
+    height: 100%;
+    background: #444;
+    transition: background-color 0.2s ease;
+    pointer-events: none;
+  }
+  
+  .resizerHandle {
+    width: 24px;
+    height: 50px;
+    background: #444;
+    border-radius: 6px;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    transform: scale(0.9);
+    pointer-events: none;
+  }
+  
+  .resizer:hover .resizerHandle {
+    transform: scale(1);
+  }
+  
+  .resizerHandle::before,
+  .resizerHandle::after {
+    content: "";
+    width: 2px;
+    height: 24px;
+    background: #666;
+    margin: 0 2px;
+  }
+  
+  .resizer:hover .resizerLine,
+  .resizer:hover .resizerHandle {
+    background: #666;
   }
   
   .panelContainer {
-    flex: 0.4;
-    max-width: 768px;
-    height: 100vh;
-    border-left: 1px solid #444;
-    background-color: #2b2b2b;
-    transition: all 0.3s ease-in-out;
+    height: 100%;
+    overflow: auto;
+    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 30%;
+    max-width: 70%;
+    background: #2b2b2b;
+    will-change: width;
+    flex: 1;
+  }
+  
+  .panelContainer.resizing {
+    transition: none;
   }

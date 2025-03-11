@@ -4,7 +4,7 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  height: 100vh; /* Fixăm înălțimea la întreaga fereastră */
+  height: 100%; /* Fixăm înălțimea la întreaga fereastră */
   background-color: #1e1e1e;
   color: white;
 }
@@ -15,7 +15,7 @@
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  height: 100vh; /* Asigură că se întinde pe întreaga pagină */
+  height: calc(100vh - 60px); /* Asigură că se întinde pe întreaga pagină */
 }
 
 .messageList {
@@ -27,7 +27,7 @@
   gap: 10px;
   font-family: "Inter", sans-serif;
   font-size: 16px;
-  max-height: calc(100vh - 100px); /* Fixăm o înălțime maximă pentru mesaje */
+  max-height: calc(100vh - 110px); /* Fixăm o înălțime maximă pentru mesaje */
 }
 
 /* 🔹 Buton în colțul din dreapta sus */

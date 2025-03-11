@@ -1,0 +1,146 @@
+.navbar {
+  height: 60px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.notificationsWrapper,
+.userMenuWrapper {
+  position: relative;
+}
+
+.notificationButton,
+.userButton {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.notificationButton:hover,
+.userButton:hover {
+  background: #2a2a2a;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #e74c3c;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notificationsDropdown,
+.userDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  min-width: 280px;
+  overflow: hidden;
+}
+
+.notificationsDropdown h3 {
+  margin: 0;
+  padding: 1rem;
+  border-bottom: 1px solid #333;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.notification {
+  padding: 1rem;
+  border-bottom: 1px solid #333;
+  transition: background-color 0.2s ease;
+}
+
+.notification:hover {
+  background: #2a2a2a;
+}
+
+.notification p {
+  margin: 0;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.notification .time {
+  color: #666;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.notification.info {
+  border-left: 3px solid #3498db;
+}
+
+.notification.success {
+  border-left: 3px solid #2ecc71;
+}
+
+.notification.warning {
+  border-left: 3px solid #f1c40f;
+}
+
+.menuItem {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menuItem:hover {
+  background: #2a2a2a;
+} 

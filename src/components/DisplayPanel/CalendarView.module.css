@@ -1,7 +1,7 @@
 .calendarContainer {
     display: flex;
     flex-direction: column;
-    height: 100vh; /* Fereastra chat ocupă toată înălțimea */
+    height: calc(100vh - 60px); /* Fereastra chat ocupă toată înălțimea */
     background: #2b2b2b;
     color: white;
     box-sizing: border-box;
@@ -15,9 +15,43 @@
     /* Înălțimea selectoarelor e fixă, restul e ocupat de tabel */
   }
   
+  .dateSelectors input {
+    background: #2b2b2b;
+    color: white;
+    border: 1px solid #444;
+    padding: 0.5rem;
+    border-radius: 4px;
+  }
+  
   .tableWrapper {
     flex: 1;           /* Ocupă tot spațiul rămas pe verticală */
     overflow: auto;    /* Scroll orizontal + vertical */
+    cursor: grab;
+    user-select: none;
+    position: relative;
+  }
+  
+  .tableWrapper.dragging {
+    cursor: grabbing;
+    scroll-behavior: auto;
+  }
+  
+  .tableWrapper::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .tableWrapper::-webkit-scrollbar-track {
+    background: #1e1e1e;
+  }
+  
+  .tableWrapper::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 5px;
+  }
+  
+  .tableWrapper::-webkit-scrollbar-thumb:hover {
+    background: #555;
   }
   
   .calendarTable {
@@ -34,6 +68,9 @@
     text-align: center;
     min-width: 80px;
     white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
   }
   
   .roomCell {
@@ -43,6 +80,9 @@
     text-align: center;
     white-space: nowrap;
     transition: background-color 0.2s ease;
+    position: sticky;
+    left: 0;
+    z-index: 1;
   }
   
   .highlightedRoom {
@@ -56,6 +96,7 @@
     min-width: 80px;
     white-space: nowrap;
     transition: background-color 0.2s ease;
+    background: #2b2b2b;
   }
   
   .highlighted {
