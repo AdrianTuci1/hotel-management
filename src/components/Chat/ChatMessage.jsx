@@ -4,14 +4,14 @@ import { useChatStore } from "../../store/chatStore";
 import useRoomOptionsStore from "../../store/roomOptionsStore";
 import { useCalendarStore } from "../../store/calendarStore";
 import apiService from "../../actions/apiService";
-import ReservationDetails from "./ReservationDetails";
+import ReservationDetails from "../ReservationDetails";
 import { IconMinimize, IconMaximize, IconCheck } from "@tabler/icons-react";
 
 const ChatMessage = ({ text, type, options, reservation }) => {
   const addMessage = useChatStore((state) => state.addMessage);
   const [reservationData, setReservationData] = useState(reservation);
   const { addRoom, updateRoomPeriod, clearRooms } = useRoomOptionsStore();
-  const { updateViewPeriod, setReservations } = useCalendarStore();
+  const { updateViewPeriod } = useCalendarStore();
   const [isExpanded, setIsExpanded] = useState(!!reservation);
   const [isFinalized, setIsFinalized] = useState(false);
 
@@ -26,6 +26,11 @@ const ChatMessage = ({ text, type, options, reservation }) => {
       addRoom(firstRoom.roomNumber);
       updateRoomPeriod(firstRoom.roomNumber, firstRoom.startDate, firstRoom.endDate);
     }
+
+    // Cleanup function
+    return () => {
+      clearRooms();
+    };
   }, [reservation]);
 
   if (!text) return null;
@@ -43,17 +48,26 @@ const ChatMessage = ({ text, type, options, reservation }) => {
   const handleFinalizeReservation = () => {
     setIsFinalized(true);
     setIsExpanded(false);
-    clearRooms(); // Curățăm starea camerelor selectate
+    clearRooms();
     
     // Adăugăm un mesaj de confirmare
-    addMessage({
-      type: "bot",
-      text: `Rezervare finalizată cu succes pentru camera ${reservationData.rooms[0].roomNumber} în perioada ${reservationData.rooms[0].startDate} - ${reservationData.rooms[0].endDate}.`,
-    });
+    if (reservationData.rooms?.[0]) {
+      addMessage({
+        type: "bot",
+        text: `Rezervare finalizată cu succes pentru camera ${reservationData.rooms[0].roomNumber} în perioada ${reservationData.rooms[0].startDate} - ${reservationData.rooms[0].endDate}.`,
+      });
+    }
   };
 
   const toggleExpand = () => {
     if (!isFinalized) {
+      if (isExpanded) {
+        clearRooms();
+      } else if (reservation?.rooms?.[0]) {
+        const firstRoom = reservation.rooms[0];
+        addRoom(firstRoom.roomNumber);
+        updateRoomPeriod(firstRoom.roomNumber, firstRoom.startDate, firstRoom.endDate);
+      }
       setIsExpanded(!isExpanded);
     }
   };
