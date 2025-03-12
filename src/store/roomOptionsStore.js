@@ -1,16 +1,6 @@
 import { create } from "zustand";
 import { useCalendarStore } from "./calendarStore";
 
-// Simulăm datele despre tipurile de camere (în practică ar veni din API/bază de date)
-const ROOM_TYPES = {
-  "101": { type: "Single", basePrice: 200 },
-  "102": { type: "Double", basePrice: 300 },
-  "103": { type: "Twin", basePrice: 300 },
-  "201": { type: "Apartament", basePrice: 500 },
-  "202": { type: "Triple", basePrice: 400 },
-  "203": { type: "Suite", basePrice: 600 }
-};
-
 const useRoomOptionsStore = create((set, get) => ({
   // Starea pentru camera evidențiată în calendar
   highlightedRoom: null,
@@ -39,7 +29,8 @@ const useRoomOptionsStore = create((set, get) => ({
           startDate,
           endDate,
           price: roomInfo?.basePrice || 0,
-          type: roomInfo?.type || "Standard"
+          type: roomInfo?.type || "Standard",
+          status: "pending"
         }
       ]
     });
@@ -68,7 +59,18 @@ const useRoomOptionsStore = create((set, get) => ({
     set({
       selectedRooms: selectedRooms.map(room =>
         room.roomNumber === roomNumber
-          ? { ...room, price }
+          ? { ...room, price: Number(price) }
+          : room
+      )
+    });
+  },
+
+  updateRoomStatus: (roomNumber, status) => {
+    const { selectedRooms } = get();
+    set({
+      selectedRooms: selectedRooms.map(room =>
+        room.roomNumber === roomNumber
+          ? { ...room, status }
           : room
       )
     });
@@ -87,7 +89,7 @@ const useRoomOptionsStore = create((set, get) => ({
   },
   
   // Obține informații despre tipul camerei
-  getRoomInfo: (roomNumber, options) => {
+  getRoomInfo: (roomNumber) => {
     const calendarStore = useCalendarStore.getState();
     const roomFromCalendar = calendarStore.rooms.find(r => r.number === roomNumber);
     if (roomFromCalendar) {
@@ -98,6 +100,8 @@ const useRoomOptionsStore = create((set, get) => ({
     }
     return null;
   },
+
+  clearRooms: () => set({ selectedRooms: [] }),
   
   // Resetează starea
   reset: () => set({

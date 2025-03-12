@@ -17,13 +17,14 @@ const ChatMessage = ({ text, type, options, reservation }) => {
 
   // Inițializăm perioada de vizualizare când primim datele rezervării
   useEffect(() => {
-    if (reservation?.startDate && reservation?.roomNumber) {
+    if (reservation?.rooms?.[0]) {
       setIsExpanded(true);
       setIsFinalized(false);
-      updateViewPeriod(reservation.startDate, reservation.endDate);
+      const firstRoom = reservation.rooms[0];
+      updateViewPeriod(firstRoom.startDate, firstRoom.endDate);
       // Adăugăm camera și actualizăm perioada ei
-      addRoom(reservation.roomNumber);
-      updateRoomPeriod(reservation.roomNumber, reservation.startDate, reservation.endDate);
+      addRoom(firstRoom.roomNumber);
+      updateRoomPeriod(firstRoom.roomNumber, firstRoom.startDate, firstRoom.endDate);
     }
   }, [reservation]);
 
@@ -31,10 +32,11 @@ const ChatMessage = ({ text, type, options, reservation }) => {
 
   const handleReservationDataChange = (newData) => {
     setReservationData(newData);
-    if (newData.startDate && newData.endDate && newData.roomNumber) {
-      updateViewPeriod(newData.startDate, newData.endDate);
+    if (newData.rooms?.[0]) {
+      const firstRoom = newData.rooms[0];
+      updateViewPeriod(firstRoom.startDate, firstRoom.endDate);
       // Actualizăm perioada pentru camera selectată
-      updateRoomPeriod(newData.roomNumber, newData.startDate, newData.endDate);
+      updateRoomPeriod(firstRoom.roomNumber, firstRoom.startDate, firstRoom.endDate);
     }
   };
 
@@ -46,7 +48,7 @@ const ChatMessage = ({ text, type, options, reservation }) => {
     // Adăugăm un mesaj de confirmare
     addMessage({
       type: "bot",
-      text: `Rezervare finalizată cu succes pentru camera ${reservationData.roomNumber} în perioada ${reservationData.startDate} - ${reservationData.endDate}.`,
+      text: `Rezervare finalizată cu succes pentru camera ${reservationData.rooms[0].roomNumber} în perioada ${reservationData.rooms[0].startDate} - ${reservationData.rooms[0].endDate}.`,
     });
   };
 

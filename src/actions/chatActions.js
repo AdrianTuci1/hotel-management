@@ -1,11 +1,26 @@
 import { useChatStore } from "../store/chatStore";
 import { useCalendarStore } from "../store/calendarStore";
 
-let chatWorker;
+let chatWorker = null;
+let isInitializing = false;
 
-export const connectSocket = () => {
-  if (!chatWorker) {
+export const connectSocket = async () => {
+  if (chatWorker || isInitializing) return;
+
+  try {
+    isInitializing = true;
     chatWorker = new Worker(new URL("../workers/WebSocketWorker.js", import.meta.url));
+
+    // Verificăm dacă Worker-ul s-a inițializat corect
+    if (!chatWorker) {
+      throw new Error("Nu s-a putut inițializa Web Worker-ul");
+    }
+
+    // Adăugăm handler pentru erori
+    chatWorker.onerror = (error) => {
+      console.error("❌ Eroare în Web Worker:", error);
+      chatWorker = null;
+    };
 
     chatWorker.onmessage = (event) => {
       const { type, payload } = event.data;
@@ -17,22 +32,32 @@ export const connectSocket = () => {
       if (type === "chat_response" && payload.response) {
         const { intent, message, type: msgType, options, formFields, extraIntents, reservation } = payload.response;
 
-        // 🔹 Adăugăm răspunsul în chat
+        // Formatăm rezervarea dacă există
+        const formattedReservation = reservation ? {
+          id: reservation.id || null,
+          fullName: reservation.guestName,
+          preferences: reservation.preferences,
+          startDate: reservation.startDate,
+          endDate: reservation.endDate,
+          type: reservation.roomType,
+          status: "pending"
+        } : null;
+
+        // Adăugăm răspunsul în chat
         addMessage({
           text: message,
           type: msgType || "bot",
           options: options || null,
-          reservation: reservation || null,
+          reservation: formattedReservation,
           formFields: formFields || null,
         });
 
-        // 📊 Gestionăm deschiderea panourilor UI
+        // Gestionăm deschiderea panourilor UI
         if (["show_calendar", "show_pos", "show_invoices", "show_stock"].includes(intent)) {
           console.log(`📌 Deschidem panoul: ${intent.replace("show_", "")}`);
           setDisplayComponent(intent.replace("show_", ""));
         }
 
-        // 📊 Gestionăm extraIntents
         if (Array.isArray(extraIntents) && extraIntents.length > 0) {
           extraIntents.forEach((extraIntent) => {
             if (["show_calendar", "show_pos", "show_invoices", "show_stock"].includes(extraIntent)) {
@@ -43,14 +68,25 @@ export const connectSocket = () => {
         }
       } 
       
-      else if (type === "active_reservations") {
-        console.log("📡 Rezervări active primite:", payload);
-        setReservations(payload);
-      } 
-      
-      else if (type === "reservations_update") {
-        console.log("🔄 Actualizare rezervări primită:", payload);
-        setReservations(payload);
+      else if (type === "active_reservations" || type === "reservations_update") {
+        console.log(`📡 ${type === "active_reservations" ? "Rezervări active" : "Actualizare rezervări"} primite:`, payload);
+        
+        // Asigurăm-ne că toate rezervările au formatul corect
+        const formattedReservations = payload.map(reservation => ({
+          id: reservation.id,
+          fullName: reservation.fullName,
+          phone: reservation.phone,
+          rooms: Array.isArray(reservation.rooms) ? reservation.rooms : [{
+            roomNumber: reservation.roomNumber,
+            startDate: reservation.startDate || reservation.checkInDate,
+            endDate: reservation.endDate || reservation.checkOutDate,
+            price: reservation.price,
+            type: reservation.roomType,
+            status: reservation.status || "pending"
+          }]
+        }));
+
+        setReservations(formattedReservations);
       }
       
       else if (type === "status") {
@@ -59,19 +95,47 @@ export const connectSocket = () => {
       
       else if (type === "error") {
         console.error("❌ Eroare WebSocket:", payload);
+        // Încercăm să reinițializăm conexiunea în caz de eroare
+        chatWorker = null;
+        setTimeout(connectSocket, 5000);
       }
     };
+
+    // Verificăm dacă Worker-ul este gata
+    chatWorker.postMessage({ type: "init" });
+    console.log("✅ Web Worker inițializat cu succes");
+  } catch (error) {
+    console.error("❌ Eroare la inițializarea Web Worker:", error);
+    chatWorker = null;
+  } finally {
+    isInitializing = false;
   }
 };
 
-export const handleChatMessage = (message) => {
+export const handleChatMessage = async (message) => {
   const { addMessage } = useChatStore.getState();
-
   addMessage({ text: message, type: "user" });
 
-  if (chatWorker && chatWorker.postMessage) {
-    chatWorker.postMessage({ type: "send_message", payload: message });
-  } else {
-    console.warn("⚠️ Web Worker nu este inițializat sau nu suportă postMessage!");
+  // Încercăm să reinițializăm Worker-ul dacă nu există
+  if (!chatWorker) {
+    await connectSocket();
+  }
+
+  try {
+    if (chatWorker?.postMessage) {
+      chatWorker.postMessage({ type: "send_message", payload: message });
+    } else {
+      throw new Error("Web Worker nu este disponibil");
+    }
+  } catch (error) {
+    console.error("❌ Eroare la trimiterea mesajului:", error);
+    addMessage({
+      type: "bot",
+      text: "Ne pare rău, dar a apărut o eroare în comunicarea cu serverul. Vă rugăm să încercați din nou.",
+    });
+    
+    // Încercăm să reinițializăm conexiunea
+    chatWorker = null;
+    setTimeout(connectSocket, 5000);
   }
 };

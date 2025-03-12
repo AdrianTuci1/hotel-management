@@ -13,11 +13,16 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
     removeRoom,
     updateRoomPeriod,
     updateRoomPrice,
-    isRoomAvailable,
     getRoomInfo,
     setHighlightedRoom,
     clearHighlightedRoom
   } = useRoomOptionsStore();
+
+  const {
+    updateViewPeriod,
+    getAvailableRooms,
+    isRoomAvailable
+  } = useCalendarStore();
 
   const [existingClient, setExistingClient] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState({
@@ -25,18 +30,84 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
     hasInvoice: false,
     hasReceipt: false
   });
+  
+  // Adăugăm state temporar pentru perioada implicită
+  const [defaultDates, setDefaultDates] = useState({
+    startDate: "",
+    endDate: ""
+  });
 
   // Populăm starea inițială din reservationData
   useEffect(() => {
     if (reservationData) {
+      // Resetăm camerele selectate la fiecare schimbare a reservationData
+      selectedRooms.forEach(room => removeRoom(room.roomNumber));
+
       setExistingClient(!!reservationData.existingClientId);
       setPaymentStatus({
         isPaid: reservationData.isPaid || false,
         hasInvoice: reservationData.hasInvoice || false,
         hasReceipt: reservationData.hasReceipt || false
       });
+
+      // Actualizăm datele rezervării cu informațiile despre client
+      const updatedData = {
+        ...reservationData,
+        fullName: reservationData.guestName || reservationData.fullName || "",
+        notes: reservationData.preferences || reservationData.notes || "",
+      };
+      setReservationData(updatedData);
+
+      // Setăm datele implicite pentru perioada și actualizăm vizualizarea calendarului
+      if (reservationData.startDate && reservationData.endDate) {
+        setDefaultDates({
+          startDate: reservationData.startDate,
+          endDate: reservationData.endDate
+        });
+
+        // Actualizăm perioada de vizualizare în calendar
+        updateViewPeriod(reservationData.startDate, reservationData.endDate);
+
+        // Dacă avem camere în reservationData, le adăugăm
+        if (reservationData.rooms?.length > 0) {
+          reservationData.rooms.forEach(room => {
+            addRoom(room.roomNumber, room.startDate, room.endDate);
+            updateRoomPrice(room.roomNumber, room.price);
+          });
+        }
+
+        // Dacă avem și roomType, găsim camera potrivită în opțiuni
+        if (reservationData.roomType) {
+          const roomInfo = options
+            .map(extractRoomInfo)
+            .find(info => info?.type.toLowerCase() === reservationData.roomType.toLowerCase());
+
+          if (roomInfo) {
+            // Verificăm disponibilitatea camerei pentru perioada selectată
+            const isAvailable = isRoomAvailable(
+              roomInfo.roomNumber,
+              reservationData.startDate,
+              reservationData.endDate
+            );
+
+            // Actualizăm rooms în reservationData doar dacă camera este disponibilă
+            if (isAvailable) {
+              setReservationData(prev => ({
+                ...prev,
+                rooms: [{
+                  roomNumber: roomInfo.roomNumber,
+                  startDate: reservationData.startDate,
+                  endDate: reservationData.endDate,
+                  type: reservationData.roomType,
+                  status: "pending"
+                }]
+              }));
+            }
+          }
+        }
+      }
     }
-  }, [reservationData]);
+  }, [reservationData?.id]);
 
   const extractRoomInfo = (option) => {
     const match = option.match(/Camera (\d+) - (\w+) \((\d+) lei\/noapte\)/);
@@ -62,17 +133,48 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
     const room = selectedRooms.find(r => r.roomNumber === roomNumber);
     if (room) {
       removeRoom(roomNumber);
+      
+      // Actualizăm rooms în reservationData
+      setReservationData(prev => ({
+        ...prev,
+        rooms: prev.rooms?.filter(r => r.roomNumber !== roomNumber) || []
+      }));
     } else {
-      // Adăugăm camera cu perioada și prețul de bază
-      addRoom(roomNumber, reservationData?.startDate, reservationData?.endDate);
-      updateRoomPrice(roomNumber, basePrice);
-    }
+      // Folosim datele implicite pentru perioada
+      if (!defaultDates.startDate || !defaultDates.endDate) {
+        alert("❌ Vă rugăm să selectați perioada rezervării înainte de a adăuga o cameră!");
+        return;
+      }
 
-    // Actualizăm datele rezervării
-    setReservationData({
-      ...reservationData,
-      rooms: selectedRooms
-    });
+      // Verificăm disponibilitatea camerei pentru perioada implicită
+      if (!isRoomAvailable(roomNumber, defaultDates.startDate, defaultDates.endDate)) {
+        alert("❌ Camera nu este disponibilă pentru perioada selectată!");
+        return;
+      }
+      
+      addRoom(roomNumber, defaultDates.startDate, defaultDates.endDate);
+      updateRoomPrice(roomNumber, basePrice);
+
+      // Actualizăm rooms în reservationData
+      const roomInfo = options
+        .map(extractRoomInfo)
+        .find(info => info?.roomNumber === roomNumber);
+
+      setReservationData(prev => ({
+        ...prev,
+        rooms: [
+          ...(prev.rooms || []),
+          {
+            roomNumber,
+            startDate: defaultDates.startDate,
+            endDate: defaultDates.endDate,
+            price: basePrice,
+            type: roomInfo?.type || "",
+            status: "pending"
+          }
+        ]
+      }));
+    }
   };
 
   const handleRoomPeriodChange = (roomNumber, field, value) => {
@@ -84,15 +186,21 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
     
     if (isRoomAvailable(roomNumber, startDate, endDate)) {
       updateRoomPeriod(roomNumber, startDate, endDate);
-      // Actualizăm datele rezervării
-      setReservationData({
-        ...reservationData,
-        rooms: selectedRooms.map(r => 
-          r.roomNumber === roomNumber 
-            ? { ...r, startDate, endDate }
-            : r
-        )
-      });
+      
+      // Actualizăm datele rezervării și perioada de vizualizare
+      const updatedRooms = selectedRooms.map(r => 
+        r.roomNumber === roomNumber 
+          ? { ...r, startDate, endDate }
+          : r
+      );
+
+      setReservationData(prev => ({
+        ...prev,
+        rooms: updatedRooms
+      }));
+
+      // Actualizăm perioada de vizualizare în calendar
+      updateViewPeriod(startDate, endDate);
     } else {
       alert("❌ Camera nu este disponibilă pentru perioada selectată!");
     }
@@ -113,11 +221,35 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
 
   const handleSave = async () => {
     try {
-      // Logica de salvare existentă
-      await apiService.createReservation(reservationData);
-      onFinalize(); // Apelăm funcția de finalizare după salvare
+      // Validăm datele înainte de salvare
+      if (!reservationData.fullName && !reservationData.guestName) {
+        alert("❌ Vă rugăm să completați numele clientului!");
+        return;
+      }
+
+      if (!selectedRooms.length) {
+        alert("❌ Vă rugăm să selectați cel puțin o cameră!");
+        return;
+      }
+
+      // Pregătim datele pentru salvare
+      const dataToSave = {
+        ...reservationData,
+        guestName: reservationData.fullName || reservationData.guestName,
+        preferences: reservationData.notes || reservationData.preferences,
+        rooms: selectedRooms.map(room => ({
+          ...room,
+          type: options
+            .map(extractRoomInfo)
+            .find(info => info?.roomNumber === room.roomNumber)?.type || ""
+        }))
+      };
+
+      await apiService.createReservation(dataToSave);
+      onFinalize();
     } catch (error) {
       console.error('Error saving reservation:', error);
+      alert("❌ A apărut o eroare la salvarea rezervării!");
     }
   };
 
@@ -126,6 +258,12 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
       setReservationData({});
       selectedRooms.forEach(room => removeRoom(room.roomNumber));
     }
+  };
+
+  // Funcție pentru a verifica disponibilitatea camerelor pentru perioada curentă
+  const getAvailableRoomsForCurrentPeriod = () => {
+    if (!defaultDates.startDate || !defaultDates.endDate) return [];
+    return getAvailableRooms(defaultDates.startDate, defaultDates.endDate);
   };
 
   return (
@@ -161,7 +299,11 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
           <input
             type="text"
             value={reservationData.fullName || ""}
-            onChange={(e) => setReservationData({ ...reservationData, fullName: e.target.value })}
+            onChange={(e) => setReservationData(prev => ({
+              ...prev,
+              fullName: e.target.value,
+              guestName: e.target.value
+            }))}
             placeholder="Nume și Prenume"
           />
         </div>
@@ -194,7 +336,7 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
         {/* Listă camere disponibile */}
         <div className={styles.availableRooms}>
           <div className={styles.roomsGrid}>
-            {options.map((option, index) => {
+            {options.map((option) => {
               const roomInfo = extractRoomInfo(option);
               if (!roomInfo) return null;
 
@@ -202,7 +344,7 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
               
               return (
                 <div 
-                  key={index}
+                  key={`room-option-${roomInfo.roomNumber}`}
                   className={`${styles.roomOption} ${isSelected ? styles.selected : ''}`}
                   onMouseEnter={() => handleMouseEnter(roomInfo.roomNumber)}
                   onMouseLeave={handleMouseLeave}
@@ -246,7 +388,7 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
                       <label>Check-in:</label>
                       <input
                         type="date"
-                        value={room.startDate || reservationData?.startDate || ""}
+                        value={room.startDate || ""}
                         onChange={(e) => handleRoomPeriodChange(room.roomNumber, 'startDate', e.target.value)}
                         min={new Date().toISOString().split('T')[0]}
                       />
@@ -255,7 +397,7 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
                       <label>Check-out:</label>
                       <input
                         type="date"
-                        value={room.endDate || reservationData?.endDate || ""}
+                        value={room.endDate || ""}
                         onChange={(e) => handleRoomPeriodChange(room.roomNumber, 'endDate', e.target.value)}
                         min={room.startDate || new Date().toISOString().split('T')[0]}
                       />

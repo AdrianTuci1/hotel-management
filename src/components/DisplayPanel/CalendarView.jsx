@@ -47,11 +47,12 @@ const CalendarView = () => {
     const dragDuration = Date.now() - dragStartTimeRef.current;
     if (dragDuration > 200) return; // Ignorăm click-ul dacă a fost parte a unui drag
 
-    const reservation = reservations.find(
-      (res) =>
-        res.roomNumber === roomNumber &&
-        date.toISOString().split("T")[0] >= res.checkInDate.split("T")[0] &&
-        date.toISOString().split("T")[0] < res.checkOutDate.split("T")[0]
+    const reservation = reservations.find(res =>
+      res.rooms.some(room =>
+        room.roomNumber === roomNumber &&
+        date.toISOString().split("T")[0] >= room.startDate.split("T")[0] &&
+        date.toISOString().split("T")[0] < room.endDate.split("T")[0]
+      )
     );
 
     if (reservation) {
@@ -59,19 +60,31 @@ const CalendarView = () => {
       const room = rooms.find(r => r.number === roomNumber);
       if (!room) return;
 
+      // Găsim camera specifică din rezervare
+      const reservedRoom = reservation.rooms.find(r => r.roomNumber === roomNumber);
+      if (!reservedRoom) return;
+
       // Creăm opțiunea pentru cameră în formatul așteptat
       const options = [`Camera ${room.number} - ${room.type} (${room.basePrice} lei/noapte)`];
 
       // Adăugăm un mesaj în chat cu detaliile rezervării
       addMessage({
         type: "bot",
-        text: `Detalii rezervare pentru Camera ${roomNumber}:`,
+        text: `Detalii rezervare pentru Camera ${roomNumber}:
+Rezervat de: ${reservation.fullName}
+Telefon: ${reservation.phone}`,
         reservation: {
-          roomNumber: reservation.roomNumber,
-          startDate: reservation.checkInDate.split("T")[0],
-          endDate: reservation.checkOutDate.split("T")[0],
-          // Adăugăm restul detaliilor din rezervare
-          ...reservation
+          id: reservation.id,
+          fullName: reservation.fullName,
+          phone: reservation.phone,
+          rooms: [{
+            roomNumber: reservedRoom.roomNumber,
+            startDate: reservedRoom.startDate,
+            endDate: reservedRoom.endDate,
+            price: reservedRoom.price,
+            type: reservedRoom.type,
+            status: reservedRoom.status
+          }]
         },
         options: options
       });
@@ -128,38 +141,54 @@ const CalendarView = () => {
     }
     
     const selectedRoom = selectedRooms.find(room => room.roomNumber === roomNumber);
-    if (!selectedRoom?.startDate || !selectedRoom?.endDate) {
+    if (!selectedRoom) return false;
+
+    // Verificăm dacă avem date valide pentru perioada selectată
+    if (!selectedRoom.startDate || !selectedRoom.endDate) {
       return false;
     }
 
     const currentDate = new Date(date);
     const start = new Date(selectedRoom.startDate);
     const end = new Date(selectedRoom.endDate);
-    return currentDate >= start && currentDate < end;
+
+    // Ajustăm end date pentru a include și ultima zi
+    end.setDate(end.getDate() - 1);
+
+    // Setăm timpul la miezul nopții pentru comparație corectă
+    currentDate.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    return currentDate >= start && currentDate <= end;
   };
 
   // Verificăm dacă o cameră este ocupată într-o anumită zi
   const isRoomOccupied = (roomNumber, date) => {
     const dayStr = date.toISOString().split("T")[0];
-    return reservations.some((res) => {
-      return (
-        res.roomNumber === roomNumber &&
-        dayStr >= res.checkInDate.split("T")[0] &&
-        dayStr < res.checkOutDate.split("T")[0]
-      );
-    });
+    return reservations.some((res) => 
+      res.rooms.some(room => 
+        room.roomNumber === roomNumber &&
+        dayStr >= room.startDate.split("T")[0] &&
+        dayStr < room.endDate.split("T")[0]
+      )
+    );
   };
 
   // Obținem statusul camerei pentru o anumită zi
   const getRoomStatus = (roomNumber, date) => {
-    if (isRoomOccupied(roomNumber, date)) {
-      const reservation = reservations.find(
-        (res) =>
-          res.roomNumber === roomNumber &&
-          date.toISOString().split("T")[0] >= res.checkInDate.split("T")[0] &&
-          date.toISOString().split("T")[0] < res.checkOutDate.split("T")[0]
-      );
-      return reservation.status;
+    const dayStr = date.toISOString().split("T")[0];
+    const reservation = reservations.find(res =>
+      res.rooms.some(room =>
+        room.roomNumber === roomNumber &&
+        dayStr >= room.startDate.split("T")[0] &&
+        dayStr < room.endDate.split("T")[0]
+      )
+    );
+
+    if (reservation) {
+      const room = reservation.rooms.find(r => r.roomNumber === roomNumber);
+      return room.status || "booked";
     }
     return "free";
   };
@@ -207,6 +236,7 @@ const CalendarView = () => {
                 {days.map((day) => {
                   const status = getRoomStatus(room.number, day);
                   const isHighlighted = isInSelectedPeriod(day, room.number);
+                  const isOccupied = status !== 'free';
                   return (
                     <td 
                       key={`${room.number}-${day.toISOString()}`} 
@@ -214,11 +244,12 @@ const CalendarView = () => {
                         ${styles.dayCell} 
                         ${styles[status]} 
                         ${isHighlighted ? styles.highlighted : ''}
-                        ${status !== 'free' ? styles.clickable : ''}
+                        ${isOccupied ? styles.clickable : ''}
                       `}
                       onClick={() => handleCellClick(room.number, day)}
+                      title={isOccupied ? "Click pentru detalii rezervare" : ""}
                     >
-                      {status === "booked" ? "🔶" : status === "confirmed" ? "🔴" : ""}
+                      {status === "confirmed" ? "🔴" : status === "pending" ? "🟡" : status === "booked" ? "🔶" : ""}
                     </td>
                   );
                 })}

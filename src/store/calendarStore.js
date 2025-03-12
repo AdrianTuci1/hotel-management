@@ -17,17 +17,19 @@ export const useCalendarStore = create((set, get) => ({
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    return !reservations.some(reservation => {
-      const resStart = new Date(reservation.checkInDate);
-      const resEnd = new Date(reservation.checkOutDate);
-      
-      return (
-        reservation.roomNumber === roomNumber &&
-        ((start >= resStart && start < resEnd) || // începutul perioadei se suprapune
-         (end > resStart && end <= resEnd) || // sfârșitul perioadei se suprapune
-         (start <= resStart && end >= resEnd)) // perioada include complet o rezervare existentă
-      );
-    });
+    return !reservations.some(reservation => 
+      reservation.rooms.some(room => {
+        if (room.roomNumber !== roomNumber) return false;
+        const resStart = new Date(room.startDate);
+        const resEnd = new Date(room.endDate);
+        
+        return (
+          (start >= resStart && start < resEnd) ||
+          (end > resStart && end <= resEnd) ||
+          (start <= resStart && end >= resEnd)
+        );
+      })
+    );
   },
 
   // Obține toate camerele disponibile pentru o perioadă
@@ -35,22 +37,25 @@ export const useCalendarStore = create((set, get) => ({
     const { rooms, reservations } = get();
     if (!startDate || !endDate) return rooms.map(room => room.number);
 
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
     return rooms
       .map(room => room.number)
       .filter(roomNumber => {
-        return !reservations.some(reservation => {
-          const resStart = new Date(reservation.checkInDate);
-          const resEnd = new Date(reservation.checkOutDate);
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-          
-          return (
-            reservation.roomNumber === roomNumber &&
-            ((start >= resStart && start < resEnd) ||
-             (end > resStart && end <= resEnd) ||
-             (start <= resStart && end >= resEnd))
-          );
-        });
+        return !reservations.some(reservation =>
+          reservation.rooms.some(room => {
+            if (room.roomNumber !== roomNumber) return false;
+            const resStart = new Date(room.startDate);
+            const resEnd = new Date(room.endDate);
+            
+            return (
+              (start >= resStart && start < resEnd) ||
+              (end > resStart && end <= resEnd) ||
+              (start <= resStart && end >= resEnd)
+            );
+          })
+        );
       });
   },
 
@@ -78,4 +83,17 @@ export const useCalendarStore = create((set, get) => ({
     console.log("📡 Actualizare rezervări:", reservations);
     set({ reservations });
   },
+
+  // Helper pentru a găsi o rezervare după ID
+  findReservationById: (id) => {
+    const { reservations } = get();
+    return reservations.find(res => res.id === id);
+  },
+
+  // Helper pentru a găsi o cameră într-o rezervare
+  findRoomInReservation: (reservationId, roomNumber) => {
+    const reservation = get().findReservationById(reservationId);
+    if (!reservation) return null;
+    return reservation.rooms.find(room => room.roomNumber === roomNumber);
+  }
 }));
