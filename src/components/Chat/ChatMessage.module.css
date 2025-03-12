@@ -1,51 +1,48 @@
 .message {
+  position: relative;
+  margin: 8px;
   padding: 12px;
   border-radius: 8px;
-  margin: 8px 0;
   max-width: 80%;
-  word-wrap: break-word;
   transition: all 0.3s ease;
-  position: relative;
+}
+
+.message.expanded {
+  max-width: 95%;
+  width: 95%;
 }
 
 .messageHeader {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
+  align-items: flex-start;
 }
 
 .messageText {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
+  flex: 1;
 }
 
 .messageText p {
   margin: 0;
-  line-height: 1.4;
+  word-break: break-word;
 }
 
 .expandButton {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 4px 8px;
   cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 6px;
-  width: fit-content;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  transition: opacity 0.2s;
 }
 
 .expandButton:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  opacity: 1;
 }
 
 .message.hasReservation {
@@ -497,16 +494,11 @@
 .finalizedBadge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   padding: 4px 8px;
   background: rgba(40, 167, 69, 0.2);
-  border: 1px solid rgba(40, 167, 69, 0.4);
+  color: #28a745;
   border-radius: 4px;
-  color: #28a745;
-  font-size: 14px;
+  font-size: 0.9rem;
   margin-top: 8px;
-}
-
-.finalizedBadge svg {
-  color: #28a745;
 }

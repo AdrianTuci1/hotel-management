@@ -15,6 +15,16 @@ function generateDatesArray(startDate, endDate) {
   return dates;
 }
 
+// 🔹 Verificăm dacă o perioadă se suprapune cu alta
+function isDateRangeOverlapping(start1, end1, start2, end2) {
+  const s1 = new Date(start1);
+  const e1 = new Date(end1);
+  const s2 = new Date(start2);
+  const e2 = new Date(end2);
+  
+  return s1 < e2 && s2 < e1;
+}
+
 const CalendarView = () => {
   const { rooms, reservations, startDate, endDate, setDateRange, fetchRooms } = useCalendarStore();
   const { highlightedRoom, selectedRooms } = useRoomOptionsStore();
@@ -163,6 +173,22 @@ Telefon: ${reservation.phone}`,
     return currentDate >= start && currentDate <= end;
   };
 
+  // Verificăm dacă o cameră este disponibilă într-o perioadă
+  const isRoomAvailable = (roomNumber, startDate, endDate) => {
+    // Verificăm dacă există rezervări care se suprapun cu perioada cerută
+    return !reservations.some(res =>
+      res.rooms.some(room =>
+        room.roomNumber === roomNumber &&
+        isDateRangeOverlapping(
+          startDate,
+          endDate,
+          room.startDate,
+          room.endDate
+        )
+      )
+    );
+  };
+
   // Verificăm dacă o cameră este ocupată într-o anumită zi
   const isRoomOccupied = (roomNumber, date) => {
     const dayStr = date.toISOString().split("T")[0];
@@ -192,6 +218,11 @@ Telefon: ${reservation.phone}`,
     }
     return "free";
   };
+
+  // Expunem funcția de verificare disponibilitate către useCalendarStore
+  useEffect(() => {
+    useCalendarStore.setState({ isRoomAvailable });
+  }, [reservations]);
 
   return (
     <div className={styles.calendarContainer}>

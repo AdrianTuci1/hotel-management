@@ -1,21 +1,24 @@
 import React from 'react';
 import styles from './ReservationDetails.module.css';
+import { useCalendarStore } from '../../store/calendarStore';
 
 const RoomsSection = ({
-  options,
   defaultDates,
   selectedRooms,
-  reservationData,
   setReservationData,
-  isRoomAvailable, // Din calendarStore
-  addRoom,         // Din roomOptionsStore
-  removeRoom,      // Din roomOptionsStore
-  updateRoomPeriod,// Din roomOptionsStore
-  updateRoomPrice, // Din roomOptionsStore
-  extractRoomInfo
+  isRoomAvailable,
+  addRoom,
+  removeRoom,
+  updateRoomPeriod,
+  updateRoomPrice,
+  getRoomInfo,
+  setHighlightedRoom
 }) => {
+  // Get rooms from CalendarStore
+  const rooms = useCalendarStore(state => state.rooms);
+
   // Handler pentru selectarea/deselectarea unei camere
-  const handleRoomSelect = (roomNumber, basePrice) => {
+  const handleRoomSelect = (roomNumber) => {
     const room = selectedRooms.find(r => r.roomNumber === roomNumber);
     if (room) {
       // Ștergem camera din roomOptionsStore
@@ -38,15 +41,15 @@ const RoomsSection = ({
         return;
       }
       
+      // Get room info
+      const roomInfo = getRoomInfo(roomNumber);
+      const basePrice = roomInfo?.basePrice || 0;
+      
       // Adăugăm camera în roomOptionsStore
       addRoom(roomNumber, defaultDates.startDate, defaultDates.endDate);
       updateRoomPrice(roomNumber, basePrice);
 
       // Actualizăm rooms în reservationData
-      const roomInfo = extractRoomInfo(options.find(opt => 
-        opt.includes(`Camera ${roomNumber}`)
-      ));
-
       setReservationData(prev => ({
         ...prev,
         rooms: [
@@ -56,7 +59,7 @@ const RoomsSection = ({
             startDate: defaultDates.startDate,
             endDate: defaultDates.endDate,
             price: basePrice,
-            type: roomInfo?.type || "",
+            type: roomInfo?.type || "Standard",
             status: "pending"
           }
         ]
@@ -116,24 +119,23 @@ const RoomsSection = ({
       {/* Listă camere disponibile */}
       <div className={styles.availableRooms}>
         <div className={styles.roomsGrid}>
-          {options.map((option) => {
-            const roomInfo = extractRoomInfo(option);
-            if (!roomInfo) return null;
-
-            const isSelected = selectedRooms.some(r => r.roomNumber === roomInfo.roomNumber);
+          {rooms.map((room) => {
+            const isSelected = selectedRooms.some(r => r.roomNumber === room.number);
             
             return (
               <div 
-                key={`room-option-${roomInfo.roomNumber}`}
+                key={`room-option-${room.number}`}
                 className={`${styles.roomOption} ${isSelected ? styles.selected : ''}`}
-                onClick={() => handleRoomSelect(roomInfo.roomNumber, roomInfo.basePrice)}
+                onClick={() => handleRoomSelect(room.number)}
+                onMouseEnter={() => setHighlightedRoom(room.number)}
+                onMouseLeave={() => setHighlightedRoom(null)}
               >
                 <div className={styles.roomHeader}>
-                  <div className={styles.roomNumber}>Camera {roomInfo.roomNumber}</div>
-                  <div className={styles.roomType}>{roomInfo.type}</div>
+                  <div className={styles.roomNumber}>Camera {room.number}</div>
+                  <div className={styles.roomType}>{room.type}</div>
                 </div>
                 <div className={styles.roomBasePrice}>
-                  Preț de bază: {roomInfo.basePrice} RON/noapte
+                  Preț de bază: {room.basePrice} RON/noapte
                 </div>
               </div>
             );
@@ -146,9 +148,7 @@ const RoomsSection = ({
         <div className={styles.selectedRooms}>
           <h5>🎯 Camere Selectate</h5>
           {selectedRooms.map((room) => {
-            const roomInfo = extractRoomInfo(options.find(opt => 
-              opt.includes(`Camera ${room.roomNumber}`)
-            ));
+            const roomInfo = getRoomInfo(room.roomNumber);
 
             return (
               <div key={room.roomNumber} className={styles.selectedRoomCard}>

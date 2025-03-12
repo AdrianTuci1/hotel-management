@@ -40,14 +40,13 @@ export const connectSocket = async () => {
           startDate: reservation.startDate,
           endDate: reservation.endDate,
           type: reservation.roomType,
-          status: "pending"
+          status: "booked"
         } : null;
 
         // Adăugăm răspunsul în chat
         addMessage({
           text: message,
           type: msgType || "bot",
-          options: options || null,
           reservation: formattedReservation,
           formFields: formFields || null,
         });
