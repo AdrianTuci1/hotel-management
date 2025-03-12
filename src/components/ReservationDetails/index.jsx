@@ -189,35 +189,37 @@ const ReservationDetails = ({ reservationData, setReservationData, options, onFi
   return (
     <>
       <div className={styles.reservationDetails}>
-        <h4>📅 Detalii rezervare</h4>
-        
-        <ClientSection 
-          existingClient={existingClient}
-          setExistingClient={setExistingClient}
-          reservationData={reservationData}
-          setReservationData={setReservationData}
-        />
+        <div className={styles.reservationContent}>
+          <h4>📅 Detalii rezervare</h4>
+          
+          <ClientSection 
+            existingClient={existingClient}
+            setExistingClient={setExistingClient}
+            reservationData={reservationData}
+            setReservationData={setReservationData}
+          />
 
-        <RoomsSection 
-          options={options}
-          defaultDates={defaultDates}
-          selectedRooms={selectedRooms}
-          reservationData={reservationData}
-          setReservationData={setReservationData}
-          isRoomAvailable={isRoomAvailable}
-          addRoom={addRoom}
-          removeRoom={removeRoom}
-          updateRoomPeriod={updateRoomPeriod}
-          updateRoomPrice={updateRoomPrice}
-          extractRoomInfo={extractRoomInfo}
-        />
+          <RoomsSection 
+            options={options}
+            defaultDates={defaultDates}
+            selectedRooms={selectedRooms}
+            reservationData={reservationData}
+            setReservationData={setReservationData}
+            isRoomAvailable={isRoomAvailable}
+            addRoom={addRoom}
+            removeRoom={removeRoom}
+            updateRoomPeriod={updateRoomPeriod}
+            updateRoomPrice={updateRoomPrice}
+            extractRoomInfo={extractRoomInfo}
+          />
 
-        <PaymentSection 
-          paymentStatus={paymentStatus}
-          setPaymentStatus={setPaymentStatus}
-          reservationData={reservationData}
-          setReservationData={setReservationData}
-        />
+          <PaymentSection 
+            paymentStatus={paymentStatus}
+            setPaymentStatus={setPaymentStatus}
+            reservationData={reservationData}
+            setReservationData={setReservationData}
+          />
+        </div>
       </div>
 
       <ActionButtons 

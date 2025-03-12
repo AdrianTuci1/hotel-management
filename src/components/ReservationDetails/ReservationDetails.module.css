@@ -5,7 +5,13 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   margin-top: 1rem;
   position: relative;
-  padding-bottom: 5rem; /* Space for fixed buttons */
+  height: calc(100vh - 200px); /* Adjust height to leave space for chat input */
+  overflow-y: auto;
+}
+
+/* Ensure the content is properly spaced */
+.reservationContent {
+  padding-bottom: 80px; /* Space for action buttons */
 }
 
 .reservationField {
@@ -173,6 +179,7 @@
   padding: 1rem;
   background: #303030;
   border-radius: 8px;
+  margin-bottom: 1rem; /* Extra space at the bottom */
 }
 
 .paymentOptions {
@@ -198,7 +205,7 @@
   padding: 1rem;
   background: #202020;
   border-top: 1px solid #404040;
-  position: absolute;
+  position: absolute; /* Changed back to absolute */
   bottom: 0;
   left: 0;
   right: 0;
@@ -301,4 +308,23 @@
   .deleteButton {
     margin-left: 0;
   }
+}
+
+/* Add styles to ensure proper scrolling behavior */
+.reservationDetails::-webkit-scrollbar {
+  width: 8px;
+}
+
+.reservationDetails::-webkit-scrollbar-track {
+  background: #202020;
+  border-radius: 8px;
+}
+
+.reservationDetails::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 8px;
+}
+
+.reservationDetails::-webkit-scrollbar-thumb:hover {
+  background: #505050;
 } 
