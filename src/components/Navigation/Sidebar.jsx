@@ -6,7 +6,7 @@ const menuItems = [
   {
     id: 'dashboard',
     label: 'Dashboard',
-    icon: '📊',
+    icon: '🏨',
   },
   {
     id: 'assistants',
@@ -14,14 +14,14 @@ const menuItems = [
     icon: '🤖',
   },
   {
-    id: 'rooms',
-    label: 'Camere',
-    icon: '🛏️',
+    id: 'schedule',
+    label: 'Grafic de lucru',
+    icon: '📅',
   },
   {
-    id: 'housekeeping',
-    label: 'Housekeeping',
-    icon: '🧹',
+    id: 'history',
+    label: 'Istoric',
+    icon: '📋',
   },
   {
     id: 'restaurant',
