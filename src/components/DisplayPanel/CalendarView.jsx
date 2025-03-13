@@ -1,51 +1,19 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useCalendarStore } from "../../store/calendarStore";
 import useRoomOptionsStore from "../../store/roomOptionsStore";
 import { useChatStore } from "../../store/chatStore";
+import { generateDatesArray, isDateRangeOverlapping, isDateInRange } from "./utils/dateUtils";
+import { useDragScroll } from "./hooks/useDragScroll";
+import DateSelector from "./components/DateSelector";
+import CalendarTable from "./components/CalendarTable";
 import styles from "./CalendarView.module.css";
-
-// 🔹 Generăm array-ul de zile între `startDate` și `endDate`
-function generateDatesArray(startDate, endDate) {
-  const dates = [];
-  let current = new Date(startDate);
-  while (current <= new Date(endDate)) {
-    dates.push(new Date(current));
-    current.setDate(current.getDate() + 1);
-  }
-  return dates;
-}
-
-// 🔹 Verificăm dacă o perioadă se suprapune cu alta
-function isDateRangeOverlapping(start1, end1, start2, end2) {
-  const s1 = new Date(start1);
-  const e1 = new Date(end1);
-  const s2 = new Date(start2);
-  const e2 = new Date(end2);
-  
-  return s1 < e2 && s2 < e1;
-}
 
 const CalendarView = () => {
   const { rooms, reservations, startDate, endDate, setDateRange, fetchRooms } = useCalendarStore();
   const { highlightedRoom, selectedRooms } = useRoomOptionsStore();
   const addMessage = useChatStore((state) => state.addMessage);
   const [days, setDays] = useState([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
-  const tableWrapperRef = useRef(null);
-  const dragStartTimeRef = useRef(0);
-
-  const setNextTwoWeeks = () => {
-    const today = new Date();
-    const twoWeeksLater = new Date(today);
-    twoWeeksLater.setDate(today.getDate() + 14);
-    
-    setDateRange(
-      today.toISOString().split('T')[0],
-      twoWeeksLater.toISOString().split('T')[0]
-    );
-  };
+  const { isDragging, tableWrapperRef, handleMouseDown, handleMouseMove, dragStartTimeRef } = useDragScroll();
 
   useEffect(() => {
     fetchRooms();
@@ -101,81 +69,44 @@ Telefon: ${reservation.phone}`,
     }
   };
 
-  const handleMouseDown = (e) => {
-    if (e.button === 0) { // doar click stânga
-      setIsDragging(true);
-      dragStartTimeRef.current = Date.now();
-      setDragStart({
-        x: e.clientX + tableWrapperRef.current.scrollLeft,
-        y: e.clientY + tableWrapperRef.current.scrollTop
-      });
-      setScrollPosition({
-        x: tableWrapperRef.current.scrollLeft,
-        y: tableWrapperRef.current.scrollTop
-      });
-    }
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-
-    const dx = dragStart.x - e.clientX;
-    const dy = dragStart.y - e.clientY;
-
-    if (tableWrapperRef.current) {
-      tableWrapperRef.current.scrollLeft = dx;
-      tableWrapperRef.current.scrollTop = dy;
-    }
-
-    e.preventDefault();
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  // Curățăm evenimentele când componenta este demontată
-  useEffect(() => {
-    document.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('mouseleave', handleMouseUp);
-    return () => {
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('mouseleave', handleMouseUp);
-    };
-  }, []);
-
   // Verificăm dacă o zi este în perioada selectată pentru o cameră
   const isInSelectedPeriod = (date, roomNumber) => {
     if (!highlightedRoom || highlightedRoom !== roomNumber) {
       return false;
     }
     
+    // Verificăm mai întâi în camerele selectate
     const selectedRoom = selectedRooms.find(room => room.roomNumber === roomNumber);
-    if (!selectedRoom) return false;
+    if (selectedRoom && selectedRoom.startDate && selectedRoom.endDate) {
+      return isDateInRange(date, selectedRoom.startDate, selectedRoom.endDate);
+    }
 
-    // Verificăm dacă avem date valide pentru perioada selectată
-    if (!selectedRoom.startDate || !selectedRoom.endDate) {
+    // Verificăm dacă camera are rezervări în ziua respectivă
+    const dayStr = date.toISOString().split("T")[0];
+    const isReserved = reservations.some((res) => 
+      res.rooms.some(room => 
+        room.roomNumber === roomNumber &&
+        dayStr >= room.startDate.split("T")[0] &&
+        dayStr < room.endDate.split("T")[0]
+      )
+    );
+
+    // Dacă camera este rezervată, nu o evidențiem
+    if (isReserved) {
       return false;
     }
 
-    const currentDate = new Date(date);
-    const start = new Date(selectedRoom.startDate);
-    const end = new Date(selectedRoom.endDate);
+    // Dacă camera nu este rezervată și avem defaultDates, verificăm dacă ziua este în perioada default
+    const defaultDates = useCalendarStore.getState().defaultDates;
+    if (defaultDates?.startDate && defaultDates?.endDate) {
+      return isDateInRange(date, defaultDates.startDate, defaultDates.endDate);
+    }
 
-    // Ajustăm end date pentru a include și ultima zi
-    end.setDate(end.getDate() - 1);
-
-    // Setăm timpul la miezul nopții pentru comparație corectă
-    currentDate.setHours(0, 0, 0, 0);
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-
-    return currentDate >= start && currentDate <= end;
+    return false;
   };
 
   // Verificăm dacă o cameră este disponibilă într-o perioadă
   const isRoomAvailable = (roomNumber, startDate, endDate) => {
-    // Verificăm dacă există rezervări care se suprapun cu perioada cerută
     return !reservations.some(res =>
       res.rooms.some(room =>
         room.roomNumber === roomNumber &&
@@ -189,17 +120,7 @@ Telefon: ${reservation.phone}`,
     );
   };
 
-  // Verificăm dacă o cameră este ocupată într-o anumită zi
-  const isRoomOccupied = (roomNumber, date) => {
-    const dayStr = date.toISOString().split("T")[0];
-    return reservations.some((res) => 
-      res.rooms.some(room => 
-        room.roomNumber === roomNumber &&
-        dayStr >= room.startDate.split("T")[0] &&
-        dayStr < room.endDate.split("T")[0]
-      )
-    );
-  };
+
 
   // Obținem statusul camerei pentru o anumită zi
   const getRoomStatus = (roomNumber, date) => {
@@ -226,69 +147,23 @@ Telefon: ${reservation.phone}`,
 
   return (
     <div className={styles.calendarContainer}>
-      <div className={styles.dateSelectors}>
-        <label>Start:</label>
-        <input type="date" value={startDate} onChange={(e) => setDateRange(e.target.value, endDate)} />
-        <label>End:</label>
-        <input type="date" value={endDate} onChange={(e) => setDateRange(startDate, e.target.value)} />
-        <button 
-          className={styles.quickSelectButton}
-          onClick={setNextTwoWeeks}
-          title="Setează perioada la următoarele 2 săptămâni"
-        >
-          Acum
-        </button>
-      </div>
-
-      <div 
-        className={`${styles.tableWrapper} ${isDragging ? styles.dragging : ''}`}
-        ref={tableWrapperRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-      >
-        <table className={styles.calendarTable}>
-          <thead>
-            <tr>
-              <th className={styles.headerCell}>Camere</th>
-              {days.map((day) => (
-                <th key={day.toISOString()} className={styles.headerCell}>
-                  {day.toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit" })}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rooms.map((room) => (
-              <tr key={room.number}>
-                <td className={`${styles.roomCell} ${highlightedRoom === room.number ? styles.highlightedRoom : ''}`}>
-                  {room.number}
-                </td>
-                {days.map((day) => {
-                  const status = getRoomStatus(room.number, day);
-                  const isHighlighted = isInSelectedPeriod(day, room.number);
-                  const isOccupied = status !== 'free';
-                  return (
-                    <td 
-                      key={`${room.number}-${day.toISOString()}`} 
-                      className={`
-                        ${styles.dayCell} 
-                        ${styles[status]} 
-                        ${isHighlighted ? styles.highlighted : ''}
-                        ${isOccupied ? styles.clickable : ''}
-                      `}
-                      onClick={() => handleCellClick(room.number, day)}
-                      title={isOccupied ? "Click pentru detalii rezervare" : ""}
-                    >
-                      {status === "confirmed" ? "🔴" : status === "pending" ? "🟡" : status === "booked" ? "🔶" : ""}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DateSelector 
+        startDate={startDate} 
+        endDate={endDate} 
+        setDateRange={setDateRange} 
+      />
+      <CalendarTable
+        rooms={rooms}
+        days={days}
+        highlightedRoom={highlightedRoom}
+        isInSelectedPeriod={isInSelectedPeriod}
+        getRoomStatus={getRoomStatus}
+        handleCellClick={handleCellClick}
+        isDragging={isDragging}
+        tableWrapperRef={tableWrapperRef}
+        handleMouseDown={handleMouseDown}
+        handleMouseMove={handleMouseMove}
+      />
     </div>
   );
 };

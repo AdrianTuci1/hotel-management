@@ -6,9 +6,14 @@ export const useCalendarStore = create((set, get) => ({
   reservations: [],
   startDate: new Date().toISOString().split("T")[0], // Azi
   endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+  defaultDates: { startDate: "", endDate: "" },
 
   setDateRange: (start, end) => {
     set({ startDate: start, endDate: end });
+  },
+
+  setDefaultDates: (dates) => {
+    set({ defaultDates: dates });
   },
 
   // Verifică disponibilitatea unei camere pentru o perioadă

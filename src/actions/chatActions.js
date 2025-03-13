@@ -30,7 +30,7 @@ export const connectSocket = async () => {
       console.log("📩 Răspuns WebSocket din Worker:", event.data);
 
       if (type === "chat_response" && payload.response) {
-        const { intent, message, type: msgType, options, formFields, extraIntents, reservation } = payload.response;
+        const { intent, message, type: msgType, formFields, extraIntents, reservation } = payload.response;
 
         // Formatăm rezervarea dacă există
         const formattedReservation = reservation ? {

@@ -12,10 +12,28 @@ const RoomsSection = ({
   updateRoomPeriod,
   updateRoomPrice,
   getRoomInfo,
-  setHighlightedRoom
+  setHighlightedRoom,
+  setDefaultDates
 }) => {
-  // Get rooms from CalendarStore
+  // Get rooms and defaultDates functions from CalendarStore
   const rooms = useCalendarStore(state => state.rooms);
+  const setCalendarDefaultDates = useCalendarStore(state => state.setDefaultDates);
+
+  // Handler pentru modificarea perioadei de verificare
+  const handleCheckPeriodChange = (field, value) => {
+    const newDates = {
+      ...defaultDates,
+      [field]: value
+    };
+    setDefaultDates(newDates);
+    setCalendarDefaultDates(newDates);
+  };
+
+  // Verifică dacă o cameră este disponibilă în perioada selectată
+  const isRoomAvailableInPeriod = (roomNumber) => {
+    if (!defaultDates.startDate || !defaultDates.endDate) return true;
+    return isRoomAvailable(roomNumber, defaultDates.startDate, defaultDates.endDate);
+  };
 
   // Handler pentru selectarea/deselectarea unei camere
   const handleRoomSelect = (roomNumber) => {
@@ -30,23 +48,12 @@ const RoomsSection = ({
         rooms: prev.rooms?.filter(r => r.roomNumber !== roomNumber) || []
       }));
     } else {
-      if (!defaultDates.startDate || !defaultDates.endDate) {
-        alert("❌ Vă rugăm să selectați perioada rezervării înainte de a adăuga o cameră!");
-        return;
-      }
-
-      // Verificăm disponibilitatea folosind calendarStore
-      if (!isRoomAvailable(roomNumber, defaultDates.startDate, defaultDates.endDate)) {
-        alert("❌ Camera nu este disponibilă pentru perioada selectată!");
-        return;
-      }
-      
       // Get room info
       const roomInfo = getRoomInfo(roomNumber);
       const basePrice = roomInfo?.basePrice || 0;
       
       // Adăugăm camera în roomOptionsStore
-      addRoom(roomNumber, defaultDates.startDate, defaultDates.endDate);
+      addRoom(roomNumber);
       updateRoomPrice(roomNumber, basePrice);
 
       // Actualizăm rooms în reservationData
@@ -56,8 +63,8 @@ const RoomsSection = ({
           ...(prev.rooms || []),
           {
             roomNumber,
-            startDate: defaultDates.startDate,
-            endDate: defaultDates.endDate,
+            startDate: defaultDates.startDate || "",
+            endDate: defaultDates.endDate || "",
             price: basePrice,
             type: roomInfo?.type || "Standard",
             status: "pending"
@@ -112,14 +119,45 @@ const RoomsSection = ({
     }));
   };
 
+  // Filtrăm camerele disponibile pentru perioada selectată
+  const availableRooms = rooms.filter(room => 
+    isRoomAvailableInPeriod(room.number) || 
+    selectedRooms.some(r => r.roomNumber === room.number)
+  );
+
   return (
     <div className={styles.roomsSection}>
-      <h5>🛏️ Camere Disponibile</h5>
+      {/* Perioada pentru verificarea disponibilității */}
+      <div className={styles.defaultDates}>
+        <h5>📅 Verificare Disponibilitate</h5>
+        <div className={styles.dateInputs}>
+          <div className={styles.reservationField}>
+            <label>De la:</label>
+            <input
+              type="date"
+              value={defaultDates.startDate || ""}
+              onChange={(e) => handleCheckPeriodChange('startDate', e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+          <div className={styles.reservationField}>
+            <label>Până la:</label>
+            <input
+              type="date"
+              value={defaultDates.endDate || ""}
+              onChange={(e) => handleCheckPeriodChange('endDate', e.target.value)}
+              min={defaultDates.startDate || new Date().toISOString().split('T')[0]}
+            />
+          </div>
+        </div>
+      </div>
+
+      <h5>🛏️ Camere Disponibile {defaultDates.startDate && defaultDates.endDate ? `(${availableRooms.length})` : ''}</h5>
       
       {/* Listă camere disponibile */}
       <div className={styles.availableRooms}>
         <div className={styles.roomsGrid}>
-          {rooms.map((room) => {
+          {availableRooms.map((room) => {
             const isSelected = selectedRooms.some(r => r.roomNumber === room.number);
             
             return (

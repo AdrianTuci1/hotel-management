@@ -7,9 +7,9 @@ import apiService from "../../actions/apiService";
 import ReservationDetails from "../ReservationDetails";
 import { IconMinimize, IconMaximize, IconCheck } from "@tabler/icons-react";
 
-const ChatMessage = ({ text, type, reservation }) => {
+const ChatMessage = ({ text, type, reservation, onShowReservationDetails }) => {
   const addMessage = useChatStore((state) => state.addMessage);
-  const { updateViewPeriod, isRoomAvailable } = useCalendarStore();
+  const { updateViewPeriod, isRoomAvailable, setDefaultDates: setCalendarDefaultDates } = useCalendarStore();
   const {
     selectedRooms,
     addRoom,
@@ -32,6 +32,11 @@ const ChatMessage = ({ text, type, reservation }) => {
     reset();
     return () => reset();
   }, []);
+
+  // Sincronizăm defaultDates cu CalendarStore
+  useEffect(() => {
+    setCalendarDefaultDates(defaultDates);
+  }, [defaultDates]);
 
   // Inițializăm datele când primim o rezervare nouă
   useEffect(() => {
@@ -168,6 +173,12 @@ const ChatMessage = ({ text, type, reservation }) => {
     }
   };
 
+  const handleReservationClick = () => {
+    if (reservation) {
+      onShowReservationDetails(reservation);
+    }
+  };
+
   if (!text) return null;
 
   const messageClasses = [
@@ -179,7 +190,7 @@ const ChatMessage = ({ text, type, reservation }) => {
   ].filter(Boolean).join(" ");
 
   return (
-    <div className={messageClasses}>
+    <div className={messageClasses} onClick={handleReservationClick}>
       <div className={styles.messageHeader}>
         <div className={styles.messageText}>
           <p>{text}</p>
@@ -227,7 +238,8 @@ const ChatMessage = ({ text, type, reservation }) => {
             updateRoomPrice,
             getRoomInfo,
             setHighlightedRoom,
-            extractRoomInfo
+            extractRoomInfo,
+            setDefaultDates
           }}
         />
       )}

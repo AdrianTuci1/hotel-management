@@ -1,0 +1,466 @@
+.invoiceContainer {
+  padding: 1rem;
+  height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+}
+
+.invoiceContainer h2 {
+  margin: 0;
+  color: #e0e0e0;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.searchGroup {
+  flex: 1;
+  min-width: 300px;
+}
+
+.searchInput {
+  padding: 0.75rem;
+  background: #2b2b2b;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.dateRangeGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #2b2b2b;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #404040;
+}
+
+.dateInput {
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.dateSeparator {
+  color: #e0e0e0;
+  font-weight: bold;
+}
+
+.searchInput:focus,
+.dateInput:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+/* Room Grid */
+.roomsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 0.5rem;
+}
+
+.roomCard {
+  background: #202020;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.roomCard:hover {
+  transform: translateY(-2px);
+  border-color: #007bff;
+}
+
+.roomCard.hasInvoice {
+  border-color: #28a745;
+}
+
+.roomHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.roomHeader h3 {
+  margin: 0;
+  color: #e0e0e0;
+  font-size: 1.2rem;
+}
+
+.invoiceStatus {
+  background: #28a745;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.guestName {
+  margin: 0;
+  color: #b0b0b0;
+  font-size: 0.9rem;
+}
+
+.roomDates {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: #b0b0b0;
+  font-size: 0.85rem;
+}
+
+.invoiceButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: auto;
+}
+
+.invoiceButton:hover {
+  background: #0056b3;
+}
+
+.invoiceButton.viewButton {
+  background: #28a745;
+}
+
+.invoiceButton.viewButton:hover {
+  background: #218838;
+}
+
+/* Invoice Form */
+.invoiceForm {
+  background: #202020;
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.formHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.formHeader h3 {
+  margin: 0;
+  color: #e0e0e0;
+  font-size: 1.3rem;
+}
+
+.backButton {
+  background: transparent;
+  border: 1px solid #404040;
+  color: #e0e0e0;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.formContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Invoice Details */
+.invoiceDetails {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  background: #2b2b2b;
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.select {
+  padding: 0.75rem;
+  background: #2b2b2b;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+/* Client Type Selection */
+.clientType {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem;
+  background: #2b2b2b;
+  border-radius: 6px;
+}
+
+.clientType label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #e0e0e0;
+  cursor: pointer;
+}
+
+.clientType input[type="radio"] {
+  accent-color: #007bff;
+}
+
+/* Form Groups */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.input {
+  padding: 0.75rem;
+  background: #2b2b2b;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.input[type="date"] {
+  color: #e0e0e0;
+  cursor: pointer;
+}
+
+.input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.textarea {
+  padding: 0.75rem;
+  background: #2b2b2b;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  min-height: 100px;
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+/* Company Search */
+.companySearch {
+  display: flex;
+  gap: 1rem;
+}
+
+.companySearch .input {
+  flex: 1;
+}
+
+.searchButton {
+  padding: 0 1.5rem;
+  background: #404040;
+  border: none;
+  border-radius: 6px;
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.searchButton:hover {
+  background: #505050;
+}
+
+/* Action Buttons */
+.actionButtons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.actionButton {
+  flex: 1;
+  padding: 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.saveButton {
+  background: #6c757d;
+  color: white;
+}
+
+.saveButton:hover {
+  background: #5a6268;
+}
+
+.printButton {
+  background: #28a745;
+  color: white;
+}
+
+.printButton:hover {
+  background: #218838;
+}
+
+.eFacturaButton {
+  background: #007bff;
+  color: white;
+}
+
+.eFacturaButton:hover {
+  background: #0056b3;
+}
+
+/* Scrollbar Styling */
+.invoiceContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.invoiceContainer::-webkit-scrollbar-track {
+  background: #2b2b2b;
+}
+
+.invoiceContainer::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+}
+
+.invoiceContainer::-webkit-scrollbar-thumb:hover {
+  background: #505050;
+}
+
+/* Loading State */
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 1rem;
+}
+
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #404040;
+  border-bottom-color: #007bff;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingState p {
+  color: #b0b0b0;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Error State */
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 1rem;
+  text-align: center;
+}
+
+.errorState p {
+  color: #dc3545;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.retryButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retryButton:hover {
+  background: #c82333;
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.emptyState p {
+  color: #b0b0b0;
+  font-size: 1rem;
+  margin: 0;
+} 

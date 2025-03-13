@@ -3,8 +3,8 @@ import { useChatStore } from "../../store/chatStore";
 import CalendarView from "./CalendarView";
 import POSView from "./POSView";
 import StockView from "./StockView";
-import InvoiceView from "./InvoiceView";
 import styles from "./DisplayPanel.module.css";
+import InvoiceView from "../../features/invoices/InvoiceView";
 
 const DisplayPanel = () => {
   const { displayComponent, closeDisplayComponent } = useChatStore();
@@ -22,7 +22,7 @@ const DisplayPanel = () => {
       {displayComponent === "calendar" && <CalendarView />}
       {displayComponent === "pos" && <POSView />}
       {displayComponent === "stock" && <StockView />}
-      {displayComponent === "invoice" && <InvoiceView />}
+      {displayComponent === "invoices" && <InvoiceView />}
     </div>
   );
 };

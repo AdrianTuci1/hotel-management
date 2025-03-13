@@ -105,6 +105,7 @@ const ReservationDetails = ({
             updateRoomPrice={roomManagement.updateRoomPrice}
             getRoomInfo={roomManagement.getRoomInfo}
             setHighlightedRoom={roomManagement.setHighlightedRoom}
+            setDefaultDates={roomManagement.setDefaultDates}
           />
 
           <PaymentSection 
