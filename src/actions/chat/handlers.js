@@ -45,47 +45,8 @@ export const handleChatResponse = (payload, { addMessage, setDisplayComponent })
  */
 export const handleReservationsUpdate = (payload, { setReservations }) => {
   console.group("🏨 Actualizare Rezervări");
-  console.log("Payload primit:", payload);
-  
-  if (!Array.isArray(payload)) {
-    console.warn("❌ Payload-ul nu este un array:", payload);
-    console.groupEnd();
-    return;
-  }
-
-  const formattedReservations = payload.map(reservation => {
-    console.log("Procesăm rezervarea:", reservation);
-    
-    // Verificăm dacă avem camerele în formatul corect
-    const rooms = Array.isArray(reservation.rooms) 
-      ? reservation.rooms.map(room => ({
-          roomNumber: room.roomNumber,
-          startDate: room.startDate || room.checkInDate,
-          endDate: room.endDate || room.checkOutDate,
-          price: room.price,
-          type: room.type || room.roomType,
-          status: room.status || "pending"
-        }))
-      : [{
-          roomNumber: reservation.roomNumber,
-          startDate: reservation.startDate || reservation.checkInDate,
-          endDate: reservation.endDate || reservation.checkOutDate,
-          price: reservation.price,
-          type: reservation.roomType,
-          status: reservation.status || "pending"
-        }];
-
-    return {
-      id: reservation.id,
-      fullName: reservation.fullName || reservation.guestName,
-      phone: reservation.phone,
-      email: reservation.email,
-      rooms: rooms
-    };
-  });
-
-  console.log("Rezervări formatate:", formattedReservations);
-  setReservations(formattedReservations);
+  console.log("Rezervări primite:", payload);
+  setReservations(payload);
   console.groupEnd();
 };
 

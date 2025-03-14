@@ -26,7 +26,6 @@ const RoomsSection = ({
       [field]: value
     };
     setDefaultDates(newDates);
-    setCalendarDefaultDates(newDates);
   };
 
   // Verifică dacă o cameră este disponibilă în perioada selectată
@@ -173,7 +172,7 @@ const RoomsSection = ({
                   <div className={styles.roomType}>{room.type}</div>
                 </div>
                 <div className={styles.roomBasePrice}>
-                  Preț de bază: {room.basePrice} RON/noapte
+                  {room.price} RON/noapte
                 </div>
               </div>
             );

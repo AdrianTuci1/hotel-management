@@ -163,7 +163,15 @@ export const handleChatMessage = async (message) => {
  */
 export const checkBookingEmails = () => {
   const worker = getWorker();
-  triggerBookingEmailCheck(worker);
+  if (worker) {
+    worker.postMessage({
+      type: "send_message",
+      payload: JSON.stringify({
+        type: "automation_action",
+        action: "BOOKING_EMAIL"
+      })
+    });
+  }
 };
 
 /**
@@ -172,7 +180,15 @@ export const checkBookingEmails = () => {
  */
 export const checkWhatsAppMessages = () => {
   const worker = getWorker();
-  triggerWhatsAppCheck(worker);
+  if (worker) {
+    worker.postMessage({
+      type: "send_message",
+      payload: JSON.stringify({
+        type: "automation_action",
+        action: "WHATSAPP_MESSAGE"
+      })
+    });
+  }
 };
 
 /**
@@ -181,5 +197,13 @@ export const checkWhatsAppMessages = () => {
  */
 export const analyzePrices = () => {
   const worker = getWorker();
-  triggerPriceAnalysis(worker);
+  if (worker) {
+    worker.postMessage({
+      type: "send_message",
+      payload: JSON.stringify({
+        type: "automation_action",
+        action: "PRICE_ANALYSIS"
+      })
+    });
+  }
 };

@@ -22,23 +22,48 @@ const connectWebSocket = () => {
       console.log("📩 Mesaj primit de la WebSocket:", response);
 
       // 🔹 Procesăm tipurile de mesaje
-      if (response.type === "chat_response") {
-        postMessage({ type: "chat_response", payload: response });
-      } else if (response.type === "reservations_update" || Array.isArray(response)) {
-        // Tratăm atât mesajele structurate cât și array-ul direct de rezervări
-        const reservations = response.type === "reservations_update" 
-          ? response.reservations 
-          : response;
-        
-        console.log("📅 Rezervări active primite:", reservations);
-        
-        // Trimitem rezervările în formatul așteptat de aplicație
-        postMessage({ 
-          type: "reservations_update", 
-          payload: reservations 
-        });
-      } else {
-        console.warn("⚠️ Tip de mesaj necunoscut:", response);
+      switch (response.type) {
+        case "chat_response":
+          postMessage({ type: "chat_response", payload: response });
+          break;
+
+        case "reservations_update":
+        case "array": // Handle direct array of reservations
+          const reservations = response.type === "reservations_update" 
+            ? response.reservations 
+            : response;
+          console.log("📅 Rezervări active primite:", reservations);
+          postMessage({ type: "reservations_update", payload: reservations });
+          break;
+
+        case "rooms_update":
+          console.log("🏠 Actualizare camere primită:", response);
+          postMessage({ type: "rooms_update", payload: response.rooms });
+          break;
+
+        case "pos_update":
+          console.log("💰 Actualizare POS primită:", response);
+          postMessage({ type: "pos_update", payload: response.data });
+          break;
+
+        case "notification":
+          console.log("🔔 Notificare primită:", response);
+          // Handle specific automation notifications
+          if (response.title === "Rezervare nouă Booking.com" ||
+              response.title === "Mesaj WhatsApp nou" ||
+              response.title === "Analiză prețuri completă") {
+            postMessage({ type: "notification", payload: response });
+          }
+          break;
+
+        case "error":
+          console.error("❌ Eroare primită de la server:", response);
+          postMessage({ type: "error", payload: response.message || "Eroare de la server" });
+          break;
+
+        default:
+          console.warn("⚠️ Tip de mesaj necunoscut:", response);
+          break;
       }
     } catch (error) {
       console.error("❌ Eroare la parsarea mesajului WebSocket:", event.data, error);

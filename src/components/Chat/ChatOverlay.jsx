@@ -1,21 +1,53 @@
+/**
+ * ChatOverlay Component
+ * 
+ * Renders an overlay with different content types (reservation details, notifications, analysis)
+ * based on current chat interactions. Provides a modal-like experience within the chat interface.
+ */
 import React from 'react';
+import PropTypes from 'prop-types';
 import styles from './ChatOverlay.module.css';
 import ReservationDetails from '../ReservationDetails';
 import { IconX, IconChartBar, IconBell } from '@tabler/icons-react';
 
+/**
+ * Overlay types enum for better type checking
+ */
+export const OVERLAY_TYPES = {
+  RESERVATION: 'reservation',
+  NOTIFICATION: 'notification',
+  ANALYSIS: 'analysis'
+};
+
+/**
+ * Renders a modal-like overlay for showing different content types
+ * 
+ * @param {Object} props - Component props
+ * @param {boolean} props.isVisible - Whether the overlay is visible
+ * @param {string} props.type - Type of overlay content to display
+ * @param {Object} props.data - Data to be displayed in the overlay
+ * @param {Function} props.onClose - Callback when overlay is closed
+ * @param {Function} props.onAction - Callback for overlay actions
+ * @param {Object} props.roomManagement - Room management data and functions
+ * @returns {JSX.Element|null} The overlay component or null if not visible
+ */
 const ChatOverlay = ({ 
   isVisible, 
   type, 
   data, 
   onClose,
   onAction,
-  roomManagement // pentru ReservationDetails
+  roomManagement
 }) => {
   if (!isVisible) return null;
 
+  /**
+   * Renders the appropriate content based on overlay type
+   * @returns {JSX.Element} The rendered content
+   */
   const renderContent = () => {
     switch (type) {
-      case 'reservation':
+      case OVERLAY_TYPES.RESERVATION:
         return (
           <ReservationDetails 
             reservationData={data}
@@ -27,7 +59,7 @@ const ChatOverlay = ({
           />
         );
 
-      case 'notification':
+      case OVERLAY_TYPES.NOTIFICATION:
         return (
           <div className={styles.notification}>
             <div className={styles.notificationHeader}>
@@ -60,7 +92,7 @@ const ChatOverlay = ({
           </div>
         );
 
-      case 'analysis':
+      case OVERLAY_TYPES.ANALYSIS:
         return (
           <div className={styles.analysis}>
             <div className={styles.analysisHeader}>
@@ -88,7 +120,7 @@ const ChatOverlay = ({
               )}
               {data.charts && (
                 <div className={styles.charts}>
-                  {/* Aici vom adăuga componenta pentru grafice */}
+                  {/* Placeholder for chart components */}
                   <pre>{JSON.stringify(data.charts, null, 2)}</pre>
                 </div>
               )}
@@ -110,15 +142,39 @@ const ChatOverlay = ({
   };
 
   return (
-    <div className={styles.overlay}>
+    <div className={styles.overlay} aria-modal="true" role="dialog">
       <div className={styles.content}>
-        <button className={styles.closeButton} onClick={onClose}>
+        <button 
+          className={styles.closeButton} 
+          onClick={onClose}
+          aria-label="Close overlay"
+        >
           <IconX size={24} />
         </button>
         {renderContent()}
       </div>
     </div>
   );
+};
+
+// PropTypes for better documentation and validation
+ChatOverlay.propTypes = {
+  isVisible: PropTypes.bool.isRequired,
+  type: PropTypes.oneOf(Object.values(OVERLAY_TYPES)),
+  data: PropTypes.object,
+  onClose: PropTypes.func.isRequired,
+  onAction: PropTypes.func.isRequired,
+  roomManagement: PropTypes.shape({
+    selectedRooms: PropTypes.array.isRequired,
+    defaultDates: PropTypes.object,
+    isRoomAvailable: PropTypes.func.isRequired,
+    addRoom: PropTypes.func.isRequired,
+    removeRoom: PropTypes.func.isRequired,
+    updateRoomPeriod: PropTypes.func.isRequired,
+    updateRoomPrice: PropTypes.func.isRequired,
+    getRoomInfo: PropTypes.func.isRequired,
+    setHighlightedRoom: PropTypes.func.isRequired
+  }).isRequired
 };
 
 export default ChatOverlay; 
