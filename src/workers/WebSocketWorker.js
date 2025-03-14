@@ -24,8 +24,19 @@ const connectWebSocket = () => {
       // 🔹 Procesăm tipurile de mesaje
       if (response.type === "chat_response") {
         postMessage({ type: "chat_response", payload: response });
-      } else if (response.type === "active_reservations") {
-        postMessage({ type: "active_reservations", payload: response.reservations });
+      } else if (response.type === "reservations_update" || Array.isArray(response)) {
+        // Tratăm atât mesajele structurate cât și array-ul direct de rezervări
+        const reservations = response.type === "reservations_update" 
+          ? response.reservations 
+          : response;
+        
+        console.log("📅 Rezervări active primite:", reservations);
+        
+        // Trimitem rezervările în formatul așteptat de aplicație
+        postMessage({ 
+          type: "reservations_update", 
+          payload: reservations 
+        });
       } else {
         console.warn("⚠️ Tip de mesaj necunoscut:", response);
       }

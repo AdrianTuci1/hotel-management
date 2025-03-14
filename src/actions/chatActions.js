@@ -1,129 +1,116 @@
 import { useChatStore } from "../store/chatStore";
 import { useCalendarStore } from "../store/calendarStore";
+import { OUTGOING_MESSAGE_TYPES } from './chat/types';
+import { handleChatResponse, handleReservationsUpdate, handleNotification } from './chat/handlers';
+import { connectSocket, getWorker, sendMessage } from './chat/worker';
+import { triggerBookingEmailCheck, triggerWhatsAppCheck, triggerPriceAnalysis } from './chat/automation';
 
-let chatWorker = null;
-let isInitializing = false;
+/**
+ * @fileoverview Gestionează acțiunile principale ale sistemului de chat.
+ * Acest modul coordonează comunicarea între UI, WebSocket Worker și handlere.
+ */
 
-export const connectSocket = async () => {
-  if (chatWorker || isInitializing) return;
+// Aceste variabile au fost mutate în worker.js
 
-  try {
-    isInitializing = true;
-    chatWorker = new Worker(new URL("../workers/WebSocketWorker.js", import.meta.url));
-
-    // Verificăm dacă Worker-ul s-a inițializat corect
-    if (!chatWorker) {
-      throw new Error("Nu s-a putut inițializa Web Worker-ul");
-    }
-
-    // Adăugăm handler pentru erori
-    chatWorker.onerror = (error) => {
-      console.error("❌ Eroare în Web Worker:", error);
-      chatWorker = null;
-    };
-
-    chatWorker.onmessage = (event) => {
-      const { type, payload } = event.data;
-      const { addMessage, setDisplayComponent } = useChatStore.getState();
-      const { setReservations } = useCalendarStore.getState();
-
-      console.log("📩 Răspuns WebSocket din Worker:", event.data);
-
-      if (type === "chat_response" && payload.response) {
-        const { intent, message, type: msgType, formFields, extraIntents, reservation } = payload.response;
-
-        // Formatăm rezervarea dacă există
-        const formattedReservation = reservation ? {
-          id: reservation.id || null,
-          fullName: reservation.guestName,
-          preferences: reservation.preferences,
-          startDate: reservation.startDate,
-          endDate: reservation.endDate,
-          type: reservation.roomType,
-          status: "booked"
-        } : null;
-
-        // Adăugăm răspunsul în chat
-        addMessage({
-          text: message,
-          type: msgType || "bot",
-          reservation: formattedReservation,
-          formFields: formFields || null,
-        });
-
-        // Gestionăm deschiderea panourilor UI
-        if (["show_calendar", "show_pos", "show_invoices", "show_stock"].includes(intent)) {
-          console.log(`📌 Deschidem panoul: ${intent.replace("show_", "")}`);
-          setDisplayComponent(intent.replace("show_", ""));
-        }
-
-        if (Array.isArray(extraIntents) && extraIntents.length > 0) {
-          extraIntents.forEach((extraIntent) => {
-            if (["show_calendar", "show_pos", "show_invoices", "show_stock"].includes(extraIntent)) {
-              console.log(`📌 Deschidem panoul suplimentar: ${extraIntent.replace("show_", "")}`);
-              setDisplayComponent(extraIntent.replace("show_", ""));
-            }
-          });
-        }
-      } 
-      
-      else if (type === "active_reservations" || type === "reservations_update") {
-        console.log(`📡 ${type === "active_reservations" ? "Rezervări active" : "Actualizare rezervări"} primite:`, payload);
-        
-        // Asigurăm-ne că toate rezervările au formatul corect
-        const formattedReservations = payload.map(reservation => ({
-          id: reservation.id,
-          fullName: reservation.fullName,
-          phone: reservation.phone,
-          rooms: Array.isArray(reservation.rooms) ? reservation.rooms : [{
-            roomNumber: reservation.roomNumber,
-            startDate: reservation.startDate || reservation.checkInDate,
-            endDate: reservation.endDate || reservation.checkOutDate,
-            price: reservation.price,
-            type: reservation.roomType,
-            status: reservation.status || "pending"
-          }]
-        }));
-
-        setReservations(formattedReservations);
-      }
-      
-      else if (type === "status") {
-        console.log(`ℹ️ WebSocket Status: ${payload}`);
-      } 
-      
-      else if (type === "error") {
-        console.error("❌ Eroare WebSocket:", payload);
-        // Încercăm să reinițializăm conexiunea în caz de eroare
-        chatWorker = null;
-        setTimeout(connectSocket, 5000);
-      }
-    };
-
-    // Verificăm dacă Worker-ul este gata
-    chatWorker.postMessage({ type: "init" });
-    console.log("✅ Web Worker inițializat cu succes");
-  } catch (error) {
-    console.error("❌ Eroare la inițializarea Web Worker:", error);
-    chatWorker = null;
-  } finally {
-    isInitializing = false;
+/**
+ * Inițializează sistemul de chat și configurează handler-ele pentru mesaje
+ * @async
+ * @returns {Promise<void>}
+ */
+export const initializeChat = async () => {
+  const worker = await connectSocket();
+  
+  if (!worker) {
+    console.error("❌ Nu s-a putut inițializa chat-ul");
+    return;
   }
+
+  worker.onmessage = (event) => {
+    const { type, payload } = event.data;
+    const { addMessage, setDisplayComponent } = useChatStore.getState();
+    const { setReservations } = useCalendarStore.getState();
+
+    // Logging detaliat pentru mesajele WebSocket
+    console.group("📩 Mesaj WebSocket Primit");
+    console.log("Tip:", type);
+    console.log("Payload:", payload);
+    console.log("Timestamp:", new Date().toISOString());
+    console.groupEnd();
+
+    switch (type) {
+      case OUTGOING_MESSAGE_TYPES.CHAT_RESPONSE:
+        handleChatResponse(payload, { addMessage, setDisplayComponent });
+        break;
+
+      case OUTGOING_MESSAGE_TYPES.RESERVATIONS_UPDATE:
+        console.group("📅 Actualizare Rezervări Primită");
+        console.log("Payload brut:", payload);
+        console.log("Store înainte de actualizare:", useCalendarStore.getState().reservations);
+        handleReservationsUpdate(payload, { setReservations });
+        console.log("Store după actualizare:", useCalendarStore.getState().reservations);
+        console.groupEnd();
+        break;
+
+      case OUTGOING_MESSAGE_TYPES.ROOMS_UPDATE:
+        // TODO: Implementare actualizare camere
+        console.log("📋 Actualizare camere primită:", payload);
+        break;
+
+      case OUTGOING_MESSAGE_TYPES.POS_UPDATE:
+        // TODO: Implementare actualizare POS
+        console.log("💰 Actualizare POS primită:", payload);
+        break;
+
+      case OUTGOING_MESSAGE_TYPES.NOTIFICATION:
+        handleNotification(payload);
+        break;
+
+      case OUTGOING_MESSAGE_TYPES.ERROR:
+        console.error("❌ Eroare de la server:", payload);
+        addMessage({
+          type: "bot",
+          text: "A apărut o eroare: " + payload,
+        });
+        break;
+
+      case "status":
+        console.log(`ℹ️ WebSocket Status: ${payload}`);
+        break;
+
+      default:
+        console.warn("⚠️ Tip de mesaj necunoscut:", type);
+    }
+  };
 };
 
+/**
+ * Procesează și trimite un mesaj de chat
+ * @async
+ * @param {string} message - Mesajul de trimis
+ * @returns {Promise<void>}
+ */
 export const handleChatMessage = async (message) => {
+  console.group("🚀 Trimitere mesaj chat");
+  console.log("Mesaj de trimis:", message);
+  
   const { addMessage } = useChatStore.getState();
   addMessage({ text: message, type: "user" });
 
-  // Încercăm să reinițializăm Worker-ul dacă nu există
-  if (!chatWorker) {
-    await connectSocket();
+  let worker = getWorker();
+  console.log("Worker existent:", !!worker);
+  
+  if (!worker) {
+    console.log("⚠️ Worker nu există, încercăm să ne conectăm...");
+    worker = await connectSocket();
+    console.log("Rezultat conectare worker:", !!worker);
   }
 
   try {
-    if (chatWorker?.postMessage) {
-      chatWorker.postMessage({ type: "send_message", payload: message });
-    } else {
+    console.log("Încercăm să trimitem mesajul către worker...");
+    const result = sendMessage(message);
+    console.log("Rezultat trimitere mesaj:", result);
+    
+    if (!result) {
       throw new Error("Web Worker nu este disponibil");
     }
   } catch (error) {
@@ -133,8 +120,36 @@ export const handleChatMessage = async (message) => {
       text: "Ne pare rău, dar a apărut o eroare în comunicarea cu serverul. Vă rugăm să încercați din nou.",
     });
     
-    // Încercăm să reinițializăm conexiunea
-    chatWorker = null;
-    setTimeout(connectSocket, 5000);
+    console.log("🔄 Încercăm reconectarea în 5 secunde...");
+    setTimeout(initializeChat, 5000);
   }
+  
+  console.groupEnd();
+};
+
+/**
+ * Verifică email-urile noi de la Booking.com
+ * @returns {void}
+ */
+export const checkBookingEmails = () => {
+  const worker = getWorker();
+  triggerBookingEmailCheck(worker);
+};
+
+/**
+ * Verifică mesajele noi de pe WhatsApp
+ * @returns {void}
+ */
+export const checkWhatsAppMessages = () => {
+  const worker = getWorker();
+  triggerWhatsAppCheck(worker);
+};
+
+/**
+ * Declanșează analiza prețurilor
+ * @returns {void}
+ */
+export const analyzePrices = () => {
+  const worker = getWorker();
+  triggerPriceAnalysis(worker);
 };

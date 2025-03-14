@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import styles from "./ReservationDetails.module.css";
-import useRoomOptionsStore from "../../store/roomOptionsStore";
-import { useCalendarStore } from "../../store/calendarStore";
 
 // Subcomponente
 import ClientSection from "./ClientSection";

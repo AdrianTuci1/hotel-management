@@ -114,6 +114,7 @@
 
 .botMessage {
   background-color: #762cff;
+  color: white;
   align-self: flex-start;
 }
 
@@ -121,6 +122,70 @@
   background-color: #007aff;
   color: white;
   align-self: flex-end;
+}
+
+.notificationMessage {
+  background-color: #ff9500;
+  color: white;
+  align-self: flex-start;
+}
+
+.analysisMessage {
+  background-color: #34c759;
+  color: white;
+  align-self: flex-start;
+}
+
+.notificationHeader,
+.analysisHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.messageLink {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  text-decoration: none;
+  margin-top: 8px;
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.messageLink:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.aiResponse {
+  margin-top: 12px;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.aiResponse p:first-child {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+.analysisContent {
+  margin-top: 12px;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.analysisContent pre {
+  margin: 0;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
 }
 
 .optionsContainer {

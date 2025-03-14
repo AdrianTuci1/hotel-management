@@ -15,7 +15,16 @@ const CalendarView = () => {
   const [days, setDays] = useState([]);
   const { isDragging, tableWrapperRef, handleMouseDown, handleMouseMove, dragStartTimeRef } = useDragScroll();
 
+  // Adăugăm logging pentru a urmări actualizările de rezervări
   useEffect(() => {
+    console.group("🗓️ Calendar - Actualizare Rezervări");
+    console.log("Rezervări primite:", reservations);
+    console.log("Perioada afișată:", { startDate, endDate });
+    console.groupEnd();
+  }, [reservations, startDate, endDate]);
+
+  useEffect(() => {
+    console.log("🔄 Calendar - Inițializare");
     fetchRooms();
     setDays(generateDatesArray(startDate, endDate));
   }, [startDate, endDate]);
@@ -119,8 +128,6 @@ Telefon: ${reservation.phone}`,
       )
     );
   };
-
-
 
   // Obținem statusul camerei pentru o anumită zi
   const getRoomStatus = (roomNumber, date) => {

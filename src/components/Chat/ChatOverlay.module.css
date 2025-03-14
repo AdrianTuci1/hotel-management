@@ -1,0 +1,173 @@
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Notification Styles */
+.notification {
+  text-align: left;
+  padding: 1rem;
+}
+
+.notificationHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  color: #ff9500;
+}
+
+.notificationHeader h3 {
+  margin: 0;
+  color: #333;
+}
+
+.aiResponseSection {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.aiResponseSection h4 {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+}
+
+/* Analysis Styles */
+.analysis {
+  padding: 1rem;
+}
+
+.analysisHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  color: #34c759;
+}
+
+.analysisHeader h3 {
+  margin: 0;
+  color: #333;
+}
+
+.analysisContent {
+  margin-bottom: 1.5rem;
+}
+
+.recommendations {
+  margin-bottom: 2rem;
+}
+
+.recommendations h4 {
+  margin: 0 0 1rem 0;
+  color: #666;
+}
+
+.recommendations ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recommendations li {
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.recommendations li:last-child {
+  margin-bottom: 0;
+}
+
+.recommendations strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.charts {
+  background-color: #f5f5f5;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.charts pre {
+  margin: 0;
+  font-family: monospace;
+}
+
+/* Common Action Buttons */
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.actions button {
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.actions button:first-child {
+  background-color: #007aff;
+  color: white;
+}
+
+.actions button:last-child {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.actions button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.actions button:active {
+  transform: translateY(0);
+} 
