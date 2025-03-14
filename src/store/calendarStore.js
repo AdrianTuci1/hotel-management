@@ -16,6 +16,13 @@ export const useCalendarStore = create((set, get) => ({
     set({ defaultDates: dates });
   },
 
+  setRooms: (rooms) => {
+    console.group("🏨 Actualizare Camere");
+    console.log("Camere noi:", rooms);
+    set({ rooms });
+    console.groupEnd();
+  },
+
   // Verifică disponibilitatea unei camere pentru o perioadă
   isRoomAvailable: (roomNumber, startDate, endDate) => {
     const { reservations } = get();

@@ -1,7 +1,7 @@
 import { useChatStore } from "../store/chatStore";
 import { useCalendarStore } from "../store/calendarStore";
 import { OUTGOING_MESSAGE_TYPES } from './chat/types';
-import { handleChatResponse, handleReservationsUpdate, handleNotification } from './chat/handlers';
+import { handleChatResponse, handleReservationsUpdate, handleRoomsUpdate, handleNotification } from './chat/handlers';
 import { connectSocket, getWorker, sendMessage } from './chat/worker';
 import { triggerBookingEmailCheck, triggerWhatsAppCheck, triggerPriceAnalysis } from './chat/automation';
 
@@ -10,7 +10,32 @@ import { triggerBookingEmailCheck, triggerWhatsAppCheck, triggerPriceAnalysis } 
  * Acest modul coordonează comunicarea între UI, WebSocket Worker și handlere.
  */
 
-// Aceste variabile au fost mutate în worker.js
+/**
+ * Normalizează tipul mesajului primit pentru a se potrivi cu OUTGOING_MESSAGE_TYPES
+ * @param {string} type - Tipul mesajului primit
+ * @returns {string} - Tipul normalizat
+ */
+const normalizeMessageType = (type) => {
+  // Convertim la uppercase pentru comparare consistentă
+  const upperType = type.toUpperCase();
+  
+  // Mapăm tipurile comune care pot veni în formate diferite
+  const typeMap = {
+    'STATUS': OUTGOING_MESSAGE_TYPES.STATUS,
+    'CHAT_RESPONSE': OUTGOING_MESSAGE_TYPES.CHAT_RESPONSE,
+    'CHATRESPONSE': OUTGOING_MESSAGE_TYPES.CHAT_RESPONSE,
+    'RESERVATIONS_UPDATE': OUTGOING_MESSAGE_TYPES.RESERVATIONS_UPDATE,
+    'RESERVATIONSUPDATE': OUTGOING_MESSAGE_TYPES.RESERVATIONS_UPDATE,
+    'ROOMS_UPDATE': OUTGOING_MESSAGE_TYPES.ROOMS_UPDATE,
+    'ROOMSUPDATE': OUTGOING_MESSAGE_TYPES.ROOMS_UPDATE,
+    'POS_UPDATE': OUTGOING_MESSAGE_TYPES.POS_UPDATE,
+    'POSUPDATE': OUTGOING_MESSAGE_TYPES.POS_UPDATE,
+    'NOTIFICATION': OUTGOING_MESSAGE_TYPES.NOTIFICATION,
+    'ERROR': OUTGOING_MESSAGE_TYPES.ERROR
+  };
+
+  return typeMap[upperType] || type;
+};
 
 /**
  * Inițializează sistemul de chat și configurează handler-ele pentru mesaje
@@ -26,13 +51,15 @@ export const initializeChat = async () => {
   }
 
   worker.onmessage = (event) => {
-    const { type, payload } = event.data;
+    const { type: rawType, payload } = event.data;
+    const type = normalizeMessageType(rawType);
     const { addMessage, setDisplayComponent } = useChatStore.getState();
     const { setReservations } = useCalendarStore.getState();
 
     // Logging detaliat pentru mesajele WebSocket
     console.group("📩 Mesaj WebSocket Primit");
-    console.log("Tip:", type);
+    console.log("Tip original:", rawType);
+    console.log("Tip normalizat:", type);
     console.log("Payload:", payload);
     console.log("Timestamp:", new Date().toISOString());
     console.groupEnd();
@@ -52,8 +79,11 @@ export const initializeChat = async () => {
         break;
 
       case OUTGOING_MESSAGE_TYPES.ROOMS_UPDATE:
-        // TODO: Implementare actualizare camere
-        console.log("📋 Actualizare camere primită:", payload);
+        console.group("📋 Actualizare Camere Primită");
+        console.log("Payload brut:", payload);
+        handleRoomsUpdate(payload);
+        console.log("Store după actualizare:", useCalendarStore.getState().rooms);
+        console.groupEnd();
         break;
 
       case OUTGOING_MESSAGE_TYPES.POS_UPDATE:
@@ -73,12 +103,12 @@ export const initializeChat = async () => {
         });
         break;
 
-      case "status":
+      case OUTGOING_MESSAGE_TYPES.STATUS:
         console.log(`ℹ️ WebSocket Status: ${payload}`);
         break;
 
       default:
-        console.warn("⚠️ Tip de mesaj necunoscut:", type);
+        console.warn("⚠️ Tip de mesaj necunoscut:", rawType, "->", type);
     }
   };
 };

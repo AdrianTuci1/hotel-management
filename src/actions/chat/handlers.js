@@ -1,6 +1,12 @@
 import { useChatStore } from "../../store/chatStore";
 import { NOTIFICATION_TYPES, VALID_INTENTS } from './types';
+import { useCalendarStore } from "../../store/calendarStore";
 
+/**
+ * Procesează un răspuns de chat și actualizează UI-ul
+ * @param {ChatResponse} payload - Răspunsul de procesat
+ * @param {Object} actions - Acțiunile disponibile
+ */
 export const handleChatResponse = (payload, { addMessage, setDisplayComponent }) => {
   if (!payload.response) return;
 
@@ -32,6 +38,11 @@ export const handleChatResponse = (payload, { addMessage, setDisplayComponent })
   }
 };
 
+/**
+ * Procesează o actualizare de rezervări
+ * @param {ReservationsUpdate} payload - Actualizarea de procesat
+ * @param {Object} actions - Acțiunile disponibile
+ */
 export const handleReservationsUpdate = (payload, { setReservations }) => {
   console.group("🏨 Actualizare Rezervări");
   console.log("Payload primit:", payload);
@@ -78,40 +89,43 @@ export const handleReservationsUpdate = (payload, { setReservations }) => {
   console.groupEnd();
 };
 
-export const handleNotification = (notification) => {
-  const { addMessage } = useChatStore.getState();
-
-  switch (notification.title) {
-    case NOTIFICATION_TYPES.BOOKING:
-      addMessage({
-        type: "notification",
-        text: `🏨 ${notification.message}`,
-        link: notification.link
-      });
-      break;
-
-    case NOTIFICATION_TYPES.WHATSAPP:
-      addMessage({
-        type: "notification",
-        text: `📱 ${notification.message}`,
-        aiResponse: notification.aiResponse
-      });
-      break;
-
-    case NOTIFICATION_TYPES.PRICE_ANALYSIS:
-      addMessage({
-        type: "analysis",
-        text: "📊 Analiză prețuri actualizată",
-        analysis: notification.analysis
-      });
-      break;
-
-    default:
-      addMessage({
-        type: "notification",
-        text: notification.message
-      });
+/**
+ * Procesează o actualizare de camere
+ * @param {RoomsUpdate} payload - Actualizarea de procesat
+ */
+export const handleRoomsUpdate = (payload) => {
+  const { rooms: currentRooms, setRooms } = useCalendarStore.getState();
+  
+  if (Array.isArray(payload.rooms)) {
+    // Actualizăm doar camerele care au fost modificate
+    const updatedRooms = currentRooms.map(currentRoom => {
+      const updatedRoom = payload.rooms.find(r => r.number === currentRoom.number);
+      return updatedRoom || currentRoom;
+    });
+    
+    // Adăugăm camerele noi care nu existau
+    const newRooms = payload.rooms.filter(
+      newRoom => !currentRooms.some(r => r.number === newRoom.number)
+    );
+    
+    setRooms([...updatedRooms, ...newRooms]);
+  } else {
+    console.error("❌ Format invalid pentru actualizare camere:", payload);
   }
+};
+
+/**
+ * Procesează o notificare
+ * @param {Object} payload - Notificarea de procesat
+ */
+export const handleNotification = (payload) => {
+  const { addMessage } = useChatStore.getState();
+  
+  addMessage({
+    type: 'notification',
+    text: payload.message,
+    ...payload
+  });
 };
 
 export const handleIntent = (intent, setDisplayComponent) => {

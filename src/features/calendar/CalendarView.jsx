@@ -6,6 +6,7 @@ import { generateDatesArray, isDateRangeOverlapping, isDateInRange } from "./uti
 import { useDragScroll } from "./hooks/useDragScroll";
 import DateSelector from "./components/DateSelector";
 import CalendarTable from "./components/CalendarTable";
+import { ROOM_STATUS, RESERVATION_STATUS } from "../../actions/chat/types";
 import styles from "./CalendarView.module.css";
 
 const CalendarView = () => {
@@ -59,7 +60,8 @@ const CalendarView = () => {
         type: "bot",
         text: `Detalii rezervare pentru Camera ${roomNumber}:
 Rezervat de: ${reservation.fullName}
-Telefon: ${reservation.phone}`,
+Telefon: ${reservation.phone}
+Status: ${reservedRoom.status}`,
         reservation: {
           id: reservation.id,
           fullName: reservation.fullName,
@@ -142,9 +144,9 @@ Telefon: ${reservation.phone}`,
 
     if (reservation) {
       const room = reservation.rooms.find(r => r.roomNumber === roomNumber);
-      return room.status || "booked";
+      return room.status || ROOM_STATUS.OCCUPIED;
     }
-    return "free";
+    return ROOM_STATUS.AVAILABLE;
   };
 
   // Expunem funcția de verificare disponibilitate către useCalendarStore

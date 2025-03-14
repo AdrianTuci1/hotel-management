@@ -27,10 +27,6 @@ const COMPONENT_MAP = {
 const DisplayPanel = () => {
   const { displayComponent, closeDisplayComponent } = useChatStore();
 
-  // Logging pentru debugging
-  console.group("🎯 DisplayPanel Render");
-  console.log("Display Component:", displayComponent);
-  console.groupEnd();
 
   // 🔹 Dacă nu există un panou activ, nu afișăm nimic
   if (!displayComponent) return null;
