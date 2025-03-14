@@ -1,11 +1,11 @@
 import React from "react";
 import { useChatStore } from "../../store/chatStore";
-import CalendarView from "./CalendarView";
-import POSView from "./POSView";
-import StockView from "./StockView";
+import CalendarView from "../../features/calendar/CalendarView";
+import POSView from "../../features/pos/POSView";
+import StockView from "../../features/stock/StockView";
 import InvoiceView from "../../features/invoices/InvoiceView";
-import NotificationView from "./NotificationView";
-import AnalysisView from "./AnalysisView";
+import NotificationView from "../../features/notifications/NotificationView";
+import AnalysisView from "../../features/analysis/AnalysisView";
 import { IconX } from "@tabler/icons-react";
 import styles from "./DisplayPanel.module.css";
 
@@ -24,13 +24,12 @@ const COMPONENT_MAP = {
   show_invoices: InvoiceView
 };
 
-const DisplayPanel = ({ data }) => {
+const DisplayPanel = () => {
   const { displayComponent, closeDisplayComponent } = useChatStore();
 
   // Logging pentru debugging
   console.group("🎯 DisplayPanel Render");
   console.log("Display Component:", displayComponent);
-  console.log("Data:", data);
   console.groupEnd();
 
   // 🔹 Dacă nu există un panou activ, nu afișăm nimic
@@ -43,28 +42,10 @@ const DisplayPanel = ({ data }) => {
     return null;
   }
 
-  // 🔹 Determinăm titlul panoului
-  const getPanelTitle = () => {
-    const titles = {
-      calendar: 'Calendar Rezervări',
-      show_calendar: 'Calendar Rezervări',
-      pos: 'Point of Sale',
-      show_pos: 'Point of Sale',
-      stock: 'Gestiune Stocuri',
-      show_stock: 'Gestiune Stocuri',
-      invoices: 'Facturi',
-      show_invoices: 'Facturi',
-      notification: data?.title || 'Notificare',
-      analysis: 'Analiză'
-    };
-
-    return titles[displayComponent] || 'Panou';
-  };
 
   return (
     <div className={styles.panelContainer}>
       <div className={styles.panelHeader}>
-        <h2>{getPanelTitle()}</h2>
         <button 
           className={styles.closeButton} 
           onClick={closeDisplayComponent}
@@ -75,7 +56,7 @@ const DisplayPanel = ({ data }) => {
       </div>
 
       <div className={styles.panelContent}>
-        <ViewComponent data={data} />
+        <ViewComponent/>
       </div>
     </div>
   );

@@ -1,0 +1,129 @@
+.analysis {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.analysisCard {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.analysisCard h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.5rem;
+  color: #2c3e50;
+}
+
+/* Recommendations styling */
+.recommendationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.recommendationItem {
+  border: 1px solid #e1e8ed;
+  border-radius: 8px;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.recommendationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.recommendationHeader h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1a202c;
+}
+
+.appliedBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #10b981;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.875rem;
+}
+
+.applyButton {
+  margin-top: 12px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.applyButton:hover {
+  background: #2563eb;
+}
+
+/* Charts styling */
+.chartsContainer {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+/* Stats styling */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.statItem {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statItem label {
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.statItem span {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+/* Export button styling */
+.exportButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  margin-top: 24px;
+}
+
+.exportButton:hover {
+  background: #1a202c;
+} 

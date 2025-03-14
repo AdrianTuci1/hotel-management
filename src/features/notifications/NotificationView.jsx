@@ -1,7 +1,7 @@
 import React from 'react';
 import { useChatStore } from '../../store/chatStore';
 import { IconBell, IconCheck, IconX } from '@tabler/icons-react';
-import styles from './DisplayPanel.module.css';
+import styles from './NotificationView.module.css';
 
 const NotificationView = ({ data }) => {
   const { removeNotification } = useChatStore();

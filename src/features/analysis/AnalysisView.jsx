@@ -1,7 +1,7 @@
 import React from 'react';
 import { useChatStore } from '../../store/chatStore';
-import { IconChartBar, IconDownload, IconCheck } from '@tabler/icons-react';
-import styles from './DisplayPanel.module.css';
+import { IconDownload, IconCheck } from '@tabler/icons-react';
+import styles from './AnalysisView.module.css';
 
 const AnalysisView = ({ data }) => {
   const { updateDisplayData } = useChatStore();
