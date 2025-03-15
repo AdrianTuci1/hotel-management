@@ -30,6 +30,11 @@ const ChatWindow = () => {
   const addMessage = useChatStore((state) => state.addMessage);
   const removeMessage = useChatStore((state) => state.removeMessage);
   const restoreMessage = useChatStore((state) => state.restoreMessage);
+  const latestIntent = useChatStore((state) => state.latestIntent);
+  const latestUserMessage = useChatStore((state) => state.latestUserMessage);
+  
+  // Filter out user messages from the main chat display
+  const nonUserMessages = messages.filter(message => message.type !== "user");
   
   const { updateViewPeriod, isRoomAvailable, setDefaultDates } = useCalendarStore();
   const {
@@ -216,6 +221,13 @@ const ChatWindow = () => {
 
   return (
     <div className={styles.chatContainer}>
+      {/* Intent display in top-left */}
+      {latestIntent && (
+        <div className={styles.latestIntent} aria-label="Current Intent">
+          {latestIntent}
+        </div>
+      )}
+
       {/* Commands help button */}
       <button 
         className={styles.commandsButton} 
@@ -241,7 +253,7 @@ const ChatWindow = () => {
       {/* Chat messages and input area */}
       <div className={styles.chatWrapper}>
         <div className={styles.messageList} role="log" aria-label="Chat messages">
-          {messages.map((message, index) => (
+          {nonUserMessages.map((message, index) => (
             <ChatMessage
               key={message.id || index}
               {...message}
@@ -249,6 +261,14 @@ const ChatWindow = () => {
             />
           ))}
         </div>
+        
+        {/* Latest user message display right above the input */}
+        {latestUserMessage && (
+          <div className={styles.latestUserMessageInline} aria-label="Latest message">
+            {latestUserMessage}
+          </div>
+        )}
+        
         <ChatInput onSendMessage={handleChatMessage} />
       </div>
 

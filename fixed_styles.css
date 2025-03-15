@@ -1,0 +1,33 @@
+/* 🔹 Latest intent displayed in top-left corner */
+.latestIntent {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(16, 163, 127, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+/* 🔹 Latest user message displayed in bottom-left corner */
+.latestUserMessage {
+  position: absolute;
+  bottom: 70px; /* Increased from 10px to move it above the input area */
+  left: 10px;
+  background: rgba(59, 59, 59, 0.8);
+  color: #eee;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 100;
+} 

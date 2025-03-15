@@ -90,8 +90,14 @@ export const handleNotification = (payload) => {
 };
 
 export const handleIntent = (intent, setDisplayComponent) => {
+  // Get the setLatestIntent function from the store
+  const { setLatestIntent } = useChatStore.getState();
+  
   if (VALID_INTENTS.includes(intent)) {
     console.log(`📌 Deschidem panoul: ${intent.replace("show_", "")}`);
+    // Store the latest intent in the chat store
+    setLatestIntent(intent);
+    // Continue with existing functionality
     setDisplayComponent(intent.replace("show_", ""));
   }
 }; 

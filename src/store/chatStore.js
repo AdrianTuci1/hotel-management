@@ -5,6 +5,8 @@ export const useChatStore = create((set) => ({
   messages: [],
   hiddenMessages: {}, // Store for messages temporarily removed from chat
   displayComponent: null,
+  latestIntent: null, // Track the latest intent
+  latestUserMessage: null, // Track the latest user message
 
   // 🔹 Adăugăm mesaj în chat
   addMessage: (message) => set((state) => {
@@ -13,8 +15,18 @@ export const useChatStore = create((set) => ({
       ...message,
       id: message.id || uuidv4()
     };
-    return { messages: [...state.messages, messageWithId] };
+    
+    // Track user messages separately
+    const newState = { messages: [...state.messages, messageWithId] };
+    if (messageWithId.type === "user") {
+      newState.latestUserMessage = messageWithId.text;
+    }
+    
+    return newState;
   }),
+
+  // 🔹 Set latest intent
+  setLatestIntent: (intent) => set({ latestIntent: intent }),
 
   // 🔹 Remove a message temporarily from chat
   removeMessage: (messageId) => set((state) => {
@@ -62,5 +74,11 @@ export const useChatStore = create((set) => ({
   },
 
   // 🔹 Resetăm chat-ul
-  resetChat: () => set({ messages: [], hiddenMessages: {}, displayComponent: null }),
+  resetChat: () => set({ 
+    messages: [], 
+    hiddenMessages: {}, 
+    displayComponent: null,
+    latestIntent: null,
+    latestUserMessage: null
+  }),
 }));

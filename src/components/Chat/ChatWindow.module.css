@@ -84,4 +84,49 @@
   border: 1px solid #444;
   position: sticky;
   bottom: 0; /* Fixăm bara de input la marginea inferioară */
+}/* 🔹 Latest intent displayed in top-left corner */
+.latestIntent {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(16, 163, 127, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 100;
 }
+
+/* 🔹 Latest user message displayed in bottom-left corner */
+.latestUserMessage {
+  position: absolute;
+  bottom: 130px; /* No longer used */ /* Increased to avoid overlap with ChatInput */
+  left: 10px;
+  background: rgba(59, 59, 59, 0.8);
+  color: #eee;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 100;
+} /* 🔹 Latest user message displayed in flow layout above ChatInput */
+.latestUserMessageInline {
+  background: rgba(59, 59, 59, 0.8);
+  color: #eee;
+  padding: 5px 10px;
+  margin: 0 auto 10px 10px; /* Add margin to bottom and left */
+  border-radius: 4px;
+  font-size: 14px;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  align-self: flex-start; /* Align to the left */
+} 

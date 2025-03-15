@@ -144,13 +144,6 @@ const ChatOverlay = ({
   return (
     <div className={styles.overlay} aria-modal="true" role="dialog">
       <div className={styles.content}>
-        <button 
-          className={styles.closeButton} 
-          onClick={onClose}
-          aria-label="Close overlay"
-        >
-          <IconX size={24} />
-        </button>
         {renderContent()}
       </div>
     </div>
