@@ -567,3 +567,31 @@
   font-size: 0.9rem;
   margin-top: 8px;
 }
+
+.canceledMessage {
+  opacity: 0.7;
+  position: relative;
+}
+
+.canceledMessage::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: rgba(255, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.canceledIndicator {
+  display: flex;
+  align-items: center;
+  color: #e74c3c;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+
+.canceledIndicator svg {
+  margin-right: 4px;
+}

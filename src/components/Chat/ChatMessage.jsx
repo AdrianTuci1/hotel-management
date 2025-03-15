@@ -8,7 +8,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import styles from "./ChatMessage.module.css";
-import { IconExternalLink } from "@tabler/icons-react";
+import { IconExternalLink, IconX } from "@tabler/icons-react";
 
 /**
  * Message types enum for better type checking
@@ -29,15 +29,24 @@ export const MESSAGE_TYPES = {
  * @param {Object} [props.reservation] - Optional reservation data
  * @param {Object} [props.link] - Optional link data
  * @param {string} [props.aiResponse] - Optional AI response suggestion
+ * @param {boolean} [props.isCanceled] - Whether the reservation was canceled
  * @param {Function} [props.onShowDetails] - Callback for showing reservation details
  * @returns {JSX.Element|null} The rendered message or null if no text
  */
-const ChatMessage = ({ text, type, reservation, link, aiResponse, onShowDetails }) => {
+const ChatMessage = ({ 
+  text, 
+  type, 
+  reservation, 
+  link, 
+  aiResponse, 
+  isCanceled,
+  onShowDetails 
+}) => {
   if (!text) return null;
 
-  // If there's a reservation, show details immediately, but only once when mounted
+  // If there's a reservation and it's not canceled, show details immediately, but only once when mounted
   React.useEffect(() => {
-    if (reservation && onShowDetails) {
+    if (reservation && onShowDetails && !isCanceled) {
       // Small delay to ensure proper state initialization
       const timer = setTimeout(() => {
         onShowDetails(reservation);
@@ -53,12 +62,19 @@ const ChatMessage = ({ text, type, reservation, link, aiResponse, onShowDetails 
     type === MESSAGE_TYPES.NOTIFICATION ? styles.notificationMessage :
     type === MESSAGE_TYPES.ANALYSIS ? styles.analysisMessage :
     styles.userMessage,
+    isCanceled ? styles.canceledMessage : null,
   ].filter(Boolean).join(" ");
 
   return (
     <div className={messageClasses}>
       <div className={styles.messageHeader}>
         <div className={styles.messageText}>
+          {isCanceled && (
+            <div className={styles.canceledIndicator}>
+              <IconX size={16} />
+              <span>Anulat</span>
+            </div>
+          )}
           <p>{text}</p>
           {link && (
             <a 
@@ -95,6 +111,7 @@ ChatMessage.propTypes = {
     text: PropTypes.string
   }),
   aiResponse: PropTypes.string,
+  isCanceled: PropTypes.bool,
   onShowDetails: PropTypes.func
 };
 

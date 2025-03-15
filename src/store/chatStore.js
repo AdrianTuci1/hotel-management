@@ -1,11 +1,55 @@
 import { create } from "zustand";
+import { v4 as uuidv4 } from 'uuid'; // You'll need to install uuid package if not already installed
 
 export const useChatStore = create((set) => ({
   messages: [],
+  hiddenMessages: {}, // Store for messages temporarily removed from chat
   displayComponent: null,
 
   // 🔹 Adăugăm mesaj în chat
-  addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
+  addMessage: (message) => set((state) => {
+    // Generate a unique ID for the message if not provided
+    const messageWithId = {
+      ...message,
+      id: message.id || uuidv4()
+    };
+    return { messages: [...state.messages, messageWithId] };
+  }),
+
+  // 🔹 Remove a message temporarily from chat
+  removeMessage: (messageId) => set((state) => {
+    const messageIndex = state.messages.findIndex(m => m.id === messageId);
+    if (messageIndex === -1) return state;
+
+    const message = state.messages[messageIndex];
+    const newMessages = [...state.messages];
+    newMessages.splice(messageIndex, 1);
+
+    return {
+      messages: newMessages,
+      hiddenMessages: {
+        ...state.hiddenMessages,
+        [messageId]: message
+      }
+    };
+  }),
+
+  // 🔹 Restore a message to chat
+  restoreMessage: (messageId, markAsCanceled = false) => set((state) => {
+    const message = state.hiddenMessages[messageId];
+    if (!message) return state;
+
+    const restoredMessage = markAsCanceled
+      ? { ...message, isCanceled: true }
+      : message;
+
+    const { [messageId]: _, ...remainingHiddenMessages } = state.hiddenMessages;
+
+    return {
+      messages: [...state.messages, restoredMessage],
+      hiddenMessages: remainingHiddenMessages
+    };
+  }),
 
   setDisplayComponent: (component) => {
     console.log("🔄 Setăm displayComponent:", component); // Debugging
@@ -18,5 +62,5 @@ export const useChatStore = create((set) => ({
   },
 
   // 🔹 Resetăm chat-ul
-  resetChat: () => set({ messages: [], displayComponent: null }),
+  resetChat: () => set({ messages: [], hiddenMessages: {}, displayComponent: null }),
 }));

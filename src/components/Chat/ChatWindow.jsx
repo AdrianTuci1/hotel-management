@@ -4,7 +4,7 @@
  * The main container component for the chat interface. Manages messages, overlays,
  * and handles chat interactions. Acts as the orchestration layer for the chat experience.
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import styles from "./ChatWindow.module.css";
 import ChatMessage from "./ChatMessage";
 import ChatOverlay from "./ChatOverlay";
@@ -28,6 +28,9 @@ const ChatWindow = () => {
   // Global state from stores
   const messages = useChatStore((state) => state.messages);
   const addMessage = useChatStore((state) => state.addMessage);
+  const removeMessage = useChatStore((state) => state.removeMessage);
+  const restoreMessage = useChatStore((state) => state.restoreMessage);
+  
   const { updateViewPeriod, isRoomAvailable, setDefaultDates } = useCalendarStore();
   const {
     selectedRooms,
@@ -47,6 +50,18 @@ const ChatWindow = () => {
     data: null
   });
 
+  // Keep a reference to the latest defaultDates
+  const latestDatesRef = useRef({
+    startDate: '',
+    endDate: ''
+  });
+
+  // Local state for defaultDates that can be updated by RoomsSection
+  const [localDefaultDates, setLocalDefaultDates] = useState({
+    startDate: '',
+    endDate: ''
+  });
+
   // Show/hide commands panel state
   const [showCommands, setShowCommands] = useState(false);
 
@@ -59,11 +74,24 @@ const ChatWindow = () => {
   }, []);
 
   /**
+   * Update localDefaultDates when overlay data changes
+   */
+  useEffect(() => {
+    if (overlay.data) {
+      // Update local default dates based on overlay data
+      const dates = getDefaultDates();
+      setLocalDefaultDates(dates);
+    }
+  }, [overlay.data]);
+
+  /**
    * Handles showing reservation details in overlay
    * 
    * @param {Object} reservation - The reservation data
+   * @param {string} messageId - The message ID that triggered this reservation
    */
-  const onShowDetails = (reservation) => {
+  const onShowDetails = (reservation, messageId) => {
+    console.log('📅 onShowDetails called with reservation:', reservation);
     handleShowDetails(
       reservation,
       overlay,
@@ -73,7 +101,9 @@ const ChatWindow = () => {
       updateViewPeriod,
       addRoom,
       updateRoomPrice,
-      setHighlightedRoom
+      setHighlightedRoom,
+      removeMessage,
+      messageId
     );
   };
 
@@ -89,16 +119,26 @@ const ChatWindow = () => {
       selectedRooms,
       getRoomInfo,
       addMessage,
-      resetRoomOptions
+      resetRoomOptions,
+      restoreMessage
     });
   };
 
   /**
    * Closes the overlay and resets room options
+   * When closing a reservation overlay, the message is not restored to chat
    */
   const handleCloseOverlay = () => {
+    // Don't restore the message when simply closing the overlay
+    // The message will only be restored when explicitly finalizing or deleting
+    
     setOverlay({ isVisible: false, type: null, data: null });
     resetRoomOptions();
+    // Reset local default dates
+    setLocalDefaultDates({
+      startDate: '',
+      endDate: ''
+    });
   };
 
   /**
@@ -107,6 +147,72 @@ const ChatWindow = () => {
   const toggleCommands = () => {
     setShowCommands(!showCommands);
   };
+
+  // Get the default dates from the reservation in overlay data
+  const getDefaultDates = () => {
+    console.log('📅 getDefaultDates called, overlay data:', overlay.data);
+    
+    let dates = { startDate: '', endDate: '' };
+    
+    // Try to get dates from different possible locations in the overlay data
+    if (overlay.data) {
+      console.log('📅 Checking direct startDate/endDate properties:', 
+                 overlay.data.startDate, overlay.data.endDate);
+      
+      // Direct properties of overlay.data
+      if (overlay.data.startDate && overlay.data.endDate) {
+        dates = {
+          startDate: overlay.data.startDate,
+          endDate: overlay.data.endDate
+        };
+        console.log('📅 Using dates from overlay.data direct properties:', dates);
+      }
+      // Check if dates are in the rooms array (first room)
+      else if (overlay.data.rooms && overlay.data.rooms.length > 0) {
+        const firstRoom = overlay.data.rooms[0];
+        console.log('📅 Checking first room dates:', 
+                   firstRoom.startDate, firstRoom.endDate);
+        
+        if (firstRoom.startDate && firstRoom.endDate) {
+          dates = {
+            startDate: firstRoom.startDate,
+            endDate: firstRoom.endDate
+          };
+          console.log('📅 Using dates from first room:', dates);
+        }
+      }
+    }
+    
+    // Fallback to selectedRooms if no dates found
+    if (!dates.startDate && !dates.endDate && selectedRooms.length > 0) {
+      console.log('📅 Fallback to selectedRooms:', selectedRooms[0]);
+      
+      dates = {
+        startDate: selectedRooms[0].startDate || '',
+        endDate: selectedRooms[0].endDate || ''
+      };
+      console.log('📅 Using dates from selectedRooms:', dates);
+    }
+    
+    // Update the reference
+    latestDatesRef.current = dates;
+    console.log('📅 Final dates being returned:', dates);
+    
+    return dates;
+  };
+
+  // Handle local updates to default dates
+  const handleSetDefaultDates = (newDates) => {
+    console.log('📅 handleSetDefaultDates called with:', newDates);
+    setLocalDefaultDates(newDates);
+    // Also update the calendar store
+    setDefaultDates(newDates);
+  };
+
+  // Get the combined defaultDates (from overlay or local state)
+  const defaultDates = localDefaultDates.startDate && localDefaultDates.endDate 
+    ? localDefaultDates 
+    : getDefaultDates();
 
   return (
     <div className={styles.chatContainer}>
@@ -137,9 +243,9 @@ const ChatWindow = () => {
         <div className={styles.messageList} role="log" aria-label="Chat messages">
           {messages.map((message, index) => (
             <ChatMessage
-              key={index}
+              key={message.id || index}
               {...message}
-              onShowDetails={onShowDetails}
+              onShowDetails={() => onShowDetails(message.reservation, message.id)}
             />
           ))}
         </div>
@@ -155,17 +261,15 @@ const ChatWindow = () => {
         onAction={onOverlayAction}
         roomManagement={{
           selectedRooms,
-          defaultDates: {
-            startDate: selectedRooms[0]?.startDate || "",
-            endDate: selectedRooms[0]?.endDate || ""
-          },
+          defaultDates,
           isRoomAvailable,
           addRoom,
           removeRoom,
           updateRoomPeriod,
           updateRoomPrice,
           getRoomInfo,
-          setHighlightedRoom
+          setHighlightedRoom,
+          setDefaultDates: handleSetDefaultDates
         }}
       />
     </div>
