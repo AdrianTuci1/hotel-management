@@ -12,7 +12,7 @@ const connectWebSocket = () => {
 
   socket.onopen = () => {
     console.log("✅ WebSocket conectat la", SOCKET_URL);
-    postMessage({ type: "status", payload: "connected" });
+    postMessage({ type: "STATUS", payload: "connected" });
     reconnectAttempts = 0; // Resetăm numărul de reconectări
   };
 
@@ -21,59 +21,63 @@ const connectWebSocket = () => {
       const response = JSON.parse(event.data);
       console.log("📩 Mesaj primit de la WebSocket:", response);
 
-      // 🔹 Procesăm tipurile de mesaje
+      // 🔹 Procesăm tipurile de mesaje conform protocolului din README
       switch (response.type) {
-        case "chat_response":
-          postMessage({ type: "chat_response", payload: response });
+        case "CHAT_RESPONSE":
+          postMessage({ type: "CHAT_RESPONSE", payload: response });
           break;
 
-        case "reservations_update":
-        case "array": // Handle direct array of reservations
-          const reservations = response.type === "reservations_update" 
-            ? response.reservations 
-            : response;
-          console.log("📅 Rezervări active primite:", reservations);
-          postMessage({ type: "reservations_update", payload: reservations });
+        case "RESERVATIONS_UPDATE":
+          console.log("📅 Actualizare rezervări primită:", response);
+          postMessage({ 
+            type: "RESERVATIONS_UPDATE", 
+            payload: response.action === "init" 
+              ? response.reservations 
+              : response.reservations // Sincronizare incrementală în viitor
+          });
           break;
 
-        case "rooms_update":
+        case "ROOMS_UPDATE":
           console.log("🏠 Actualizare camere primită:", response);
-          postMessage({ type: "rooms_update", payload: response.rooms });
+          postMessage({ type: "ROOMS_UPDATE", payload: response.rooms });
           break;
 
-        case "pos_update":
+        case "POS_UPDATE":
           console.log("💰 Actualizare POS primită:", response);
-          postMessage({ type: "pos_update", payload: response.data });
+          postMessage({ type: "POS_UPDATE", payload: response.data });
           break;
 
-        case "notification":
+        case "NOTIFICATION":
           console.log("🔔 Notificare primită:", response);
-          // Handle specific automation notifications
-          if (response.title === "Rezervare nouă Booking.com" ||
-              response.title === "Mesaj WhatsApp nou" ||
-              response.title === "Analiză prețuri completă") {
-            postMessage({ type: "notification", payload: response });
-          }
+          postMessage({ type: "NOTIFICATION", payload: response });
           break;
 
-        case "error":
+        case "ERROR":
           console.error("❌ Eroare primită de la server:", response);
-          postMessage({ type: "error", payload: response.message || "Eroare de la server" });
+          postMessage({ type: "ERROR", payload: response.message || "Eroare de la server" });
           break;
 
         default:
           console.warn("⚠️ Tip de mesaj necunoscut:", response);
+          // Încercăm să normalizăm tipurile pentru compatibilitate
+          if (response.type?.toLowerCase() === "chat_response") {
+            postMessage({ type: "CHAT_RESPONSE", payload: response });
+          } else if (Array.isArray(response)) {
+            // Tratăm array-uri direct ca rezervări (compatibilitate)
+            console.log("📅 Rezervări active primite (format array):", response);
+            postMessage({ type: "RESERVATIONS_UPDATE", payload: response });
+          }
           break;
       }
     } catch (error) {
       console.error("❌ Eroare la parsarea mesajului WebSocket:", event.data, error);
-      postMessage({ type: "error", payload: "Eroare la parsarea mesajului WebSocket" });
+      postMessage({ type: "ERROR", payload: "Eroare la parsarea mesajului WebSocket" });
     }
   };
 
   socket.onclose = () => {
     console.warn("⚠️ WebSocket s-a deconectat.");
-    postMessage({ type: "status", payload: "disconnected" });
+    postMessage({ type: "STATUS", payload: "disconnected" });
 
     if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
       reconnectAttempts++;
@@ -86,7 +90,7 @@ const connectWebSocket = () => {
 
   socket.onerror = (error) => {
     console.error("❌ Eroare WebSocket:", error);
-    postMessage({ type: "error", payload: "Eroare WebSocket" });
+    postMessage({ type: "ERROR", payload: "Eroare WebSocket" });
   };
 };
 
@@ -97,12 +101,54 @@ connectWebSocket();
 self.onmessage = (event) => {
   const { type, payload } = event.data;
 
-  if (type === "send_message") {
+  if (type === "init") {
+    // Reinițializăm conexiunea dacă este necesar
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      connectWebSocket();
+    }
+  } else if (type === "send_message") {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      console.log("📤 Trimitere mesaj prin WebSocket:", payload);
-      socket.send(JSON.stringify({ type: "chat_message", content: payload }));
+      // Formatăm mesajul conform protocolului din README
+      let messageToSend;
+      
+      // Verificăm dacă payload-ul este deja un string JSON sau un obiect
+      if (typeof payload === 'string') {
+        try {
+          // Încercăm să parsăm în caz că e deja un JSON
+          const parsedPayload = JSON.parse(payload);
+          messageToSend = parsedPayload;
+        } catch (e) {
+          // Dacă nu e JSON, îl încapsulăm ca text simplu
+          messageToSend = { 
+            type: "CHAT_MESSAGE",
+            content: payload
+          };
+        }
+      } else {
+        // Dacă e obiect, îl folosim direct
+        messageToSend = payload;
+      }
+      
+      console.log("📤 Trimitere mesaj prin WebSocket:", messageToSend);
+      socket.send(JSON.stringify(messageToSend));
     } else {
       console.warn("⚠️ WebSocket nu este conectat, mesajul nu a fost trimis.");
+      postMessage({ type: "ERROR", payload: "WebSocket nu este conectat, mesajul nu a fost trimis." });
+      
+      // Încercăm reconectarea
+      if (!socket || socket.readyState !== WebSocket.CONNECTING) {
+        connectWebSocket();
+      }
+    }
+  } else if (type === "automation_action") {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      console.log("🤖 Trimitere acțiune automată:", payload);
+      socket.send(JSON.stringify({ 
+        type: "AUTOMATION_ACTION", 
+        action: payload
+      }));
+    } else {
+      console.warn("⚠️ WebSocket nu este conectat, acțiunea automată nu a fost trimisă.");
     }
   }
 };

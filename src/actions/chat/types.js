@@ -1,5 +1,6 @@
 /**
  * Tipuri de mesaje trimise de la server către client
+ * Aceste tipuri sunt conform protocolului descris în README
  */
 export const OUTGOING_MESSAGE_TYPES = {
   // Mesaje de chat
@@ -24,12 +25,45 @@ export const OUTGOING_MESSAGE_TYPES = {
 
 /**
  * Tipuri de mesaje trimise de la client către server
+ * Conform protocolului din documentație
  */
 export const INCOMING_MESSAGE_TYPES = {
   CHAT_MESSAGE: 'CHAT_MESSAGE',
-  CHECK_BOOKING_EMAILS: 'CHECK_BOOKING_EMAILS',
-  CHECK_WHATSAPP: 'CHECK_WHATSAPP',
-  ANALYZE_PRICES: 'ANALYZE_PRICES'
+  AUTOMATION_ACTION: 'AUTOMATION_ACTION'
+};
+
+/**
+ * Acțiuni de automatizare
+ */
+export const AUTOMATION_ACTIONS = {
+  BOOKING_EMAIL: 'BOOKING_EMAIL',
+  WHATSAPP_MESSAGE: 'WHATSAPP_MESSAGE',
+  PRICE_ANALYSIS: 'PRICE_ANALYSIS'
+};
+
+/**
+ * Tipuri de intenții suportate conform documentației
+ */
+export const CHAT_INTENTS = {
+  RESERVATION: 'RESERVATION',
+  MODIFY_RESERVATION: 'MODIFY_RESERVATION',
+  SHOW_CALENDAR: 'SHOW_CALENDAR',
+  SHOW_STOCK: 'SHOW_STOCK',
+  SHOW_REPORTS: 'SHOW_REPORTS',
+  SHOW_INVOICES: 'SHOW_INVOICES',
+  SHOW_POS: 'SHOW_POS',
+  SELL_PRODUCT: 'SELL_PRODUCT',
+  DEFAULT: 'DEFAULT'
+};
+
+/**
+ * Tipuri de răspunsuri conform documentației
+ */
+export const RESPONSE_TYPES = {
+  ACTION: 'ACTION',
+  ERROR: 'ERROR',
+  MESSAGE: 'MESSAGE',
+  FORM: 'FORM'
 };
 
 /**
@@ -40,6 +74,7 @@ export const DISPLAY_COMPONENTS = {
   POS: 'pos',
   STOCK: 'stock',
   INVOICES: 'invoices',
+  REPORTS: 'reports',
   NOTIFICATION: 'notification',
   ANALYSIS: 'analysis'
 };
@@ -56,6 +91,7 @@ export const ROOM_STATUS = {
 
 /**
  * Stări posibile pentru o rezervare
+ * Conform documentației
  */
 export const RESERVATION_STATUS = {
   PENDING: 'pending',
@@ -75,10 +111,12 @@ export const NOTIFICATION_TYPES = {
 
 /**
  * Intents valide pentru UI
+ * Corespund cu descrierea din README
  */
 export const VALID_INTENTS = [
   "show_calendar",
   "show_pos", 
   "show_invoices",
-  "show_stock"
+  "show_stock",
+  "show_reports"
 ]; 

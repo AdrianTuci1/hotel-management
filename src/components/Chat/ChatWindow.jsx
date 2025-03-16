@@ -155,14 +155,11 @@ const ChatWindow = () => {
 
   // Get the default dates from the reservation in overlay data
   const getDefaultDates = () => {
-    console.log('📅 getDefaultDates called, overlay data:', overlay.data);
     
     let dates = { startDate: '', endDate: '' };
     
     // Try to get dates from different possible locations in the overlay data
     if (overlay.data) {
-      console.log('📅 Checking direct startDate/endDate properties:', 
-                 overlay.data.startDate, overlay.data.endDate);
       
       // Direct properties of overlay.data
       if (overlay.data.startDate && overlay.data.endDate) {
@@ -170,13 +167,10 @@ const ChatWindow = () => {
           startDate: overlay.data.startDate,
           endDate: overlay.data.endDate
         };
-        console.log('📅 Using dates from overlay.data direct properties:', dates);
       }
       // Check if dates are in the rooms array (first room)
       else if (overlay.data.rooms && overlay.data.rooms.length > 0) {
         const firstRoom = overlay.data.rooms[0];
-        console.log('📅 Checking first room dates:', 
-                   firstRoom.startDate, firstRoom.endDate);
         
         if (firstRoom.startDate && firstRoom.endDate) {
           dates = {
@@ -190,13 +184,11 @@ const ChatWindow = () => {
     
     // Fallback to selectedRooms if no dates found
     if (!dates.startDate && !dates.endDate && selectedRooms.length > 0) {
-      console.log('📅 Fallback to selectedRooms:', selectedRooms[0]);
       
       dates = {
         startDate: selectedRooms[0].startDate || '',
         endDate: selectedRooms[0].endDate || ''
       };
-      console.log('📅 Using dates from selectedRooms:', dates);
     }
     
     // Update the reference

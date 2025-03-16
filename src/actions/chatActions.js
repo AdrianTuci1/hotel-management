@@ -23,13 +23,9 @@ const normalizeMessageType = (type) => {
   const typeMap = {
     'STATUS': OUTGOING_MESSAGE_TYPES.STATUS,
     'CHAT_RESPONSE': OUTGOING_MESSAGE_TYPES.CHAT_RESPONSE,
-    'CHATRESPONSE': OUTGOING_MESSAGE_TYPES.CHAT_RESPONSE,
     'RESERVATIONS_UPDATE': OUTGOING_MESSAGE_TYPES.RESERVATIONS_UPDATE,
-    'RESERVATIONSUPDATE': OUTGOING_MESSAGE_TYPES.RESERVATIONS_UPDATE,
     'ROOMS_UPDATE': OUTGOING_MESSAGE_TYPES.ROOMS_UPDATE,
-    'ROOMSUPDATE': OUTGOING_MESSAGE_TYPES.ROOMS_UPDATE,
     'POS_UPDATE': OUTGOING_MESSAGE_TYPES.POS_UPDATE,
-    'POSUPDATE': OUTGOING_MESSAGE_TYPES.POS_UPDATE,
     'NOTIFICATION': OUTGOING_MESSAGE_TYPES.NOTIFICATION,
     'ERROR': OUTGOING_MESSAGE_TYPES.ERROR
   };
@@ -43,6 +39,7 @@ const normalizeMessageType = (type) => {
  * @returns {Promise<void>}
  */
 export const initializeChat = async () => {
+  console.log("🚀 Inițializare sistem de chat...");
   const worker = await connectSocket();
   
   if (!worker) {
@@ -58,7 +55,6 @@ export const initializeChat = async () => {
 
     // Logging detaliat pentru mesajele WebSocket
     console.group("📩 Mesaj WebSocket Primit");
-    console.log("Tip original:", rawType);
     console.log("Tip normalizat:", type);
     console.log("Payload:", payload);
     console.log("Timestamp:", new Date().toISOString());
@@ -87,8 +83,9 @@ export const initializeChat = async () => {
         break;
 
       case OUTGOING_MESSAGE_TYPES.POS_UPDATE:
-        // TODO: Implementare actualizare POS
+        // Implementare actualizare POS conform documentației README
         console.log("💰 Actualizare POS primită:", payload);
+        // Codul pentru procesarea actualizării va fi adăugat în viitor
         break;
 
       case OUTGOING_MESSAGE_TYPES.NOTIFICATION:
@@ -114,7 +111,7 @@ export const initializeChat = async () => {
 };
 
 /**
- * Procesează și trimite un mesaj de chat
+ * Procesează și trimite un mesaj de chat conform protocolului din README
  * @async
  * @param {string} message - Mesajul de trimis
  * @returns {Promise<void>}
@@ -137,7 +134,14 @@ export const handleChatMessage = async (message) => {
 
   try {
     console.log("Încercăm să trimitem mesajul către worker...");
-    const result = sendMessage(message);
+    
+    // Formatăm mesajul conform protocolului documentat în README
+    const formattedMessage = JSON.stringify({
+      type: "CHAT_MESSAGE",
+      content: message
+    });
+    
+    const result = sendMessage(formattedMessage);
     console.log("Rezultat trimitere mesaj:", result);
     
     if (!result) {
@@ -162,15 +166,16 @@ export const handleChatMessage = async (message) => {
  * @returns {void}
  */
 export const checkBookingEmails = () => {
+  console.log("📨 Verificare email-uri Booking.com...");
   const worker = getWorker();
   if (worker) {
+    // Formatare conform protocolului din README
     worker.postMessage({
-      type: "send_message",
-      payload: JSON.stringify({
-        type: "automation_action",
-        action: "BOOKING_EMAIL"
-      })
+      type: "automation_action",
+      payload: "BOOKING_EMAIL"
     });
+  } else {
+    console.warn("⚠️ Worker nu este disponibil pentru verificarea email-urilor");
   }
 };
 
@@ -179,15 +184,16 @@ export const checkBookingEmails = () => {
  * @returns {void}
  */
 export const checkWhatsAppMessages = () => {
+  console.log("📱 Verificare mesaje WhatsApp...");
   const worker = getWorker();
   if (worker) {
+    // Formatare conform protocolului din README
     worker.postMessage({
-      type: "send_message",
-      payload: JSON.stringify({
-        type: "automation_action",
-        action: "WHATSAPP_MESSAGE"
-      })
+      type: "automation_action",
+      payload: "WHATSAPP_MESSAGE"
     });
+  } else {
+    console.warn("⚠️ Worker nu este disponibil pentru verificarea WhatsApp");
   }
 };
 
@@ -196,14 +202,15 @@ export const checkWhatsAppMessages = () => {
  * @returns {void}
  */
 export const analyzePrices = () => {
+  console.log("📊 Analiză prețuri...");
   const worker = getWorker();
   if (worker) {
+    // Formatare conform protocolului din README
     worker.postMessage({
-      type: "send_message",
-      payload: JSON.stringify({
-        type: "automation_action",
-        action: "PRICE_ANALYSIS"
-      })
+      type: "automation_action",
+      payload: "PRICE_ANALYSIS"
     });
+  } else {
+    console.warn("⚠️ Worker nu este disponibil pentru analiza prețurilor");
   }
 };

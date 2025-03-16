@@ -1,35 +1,48 @@
 import { INCOMING_MESSAGE_TYPES } from './types';
 
-// Funcție helper pentru trimiterea mesajelor prin Worker
-const sendWorkerMessage = (worker, type, action) => {
+/**
+ * Helper pentru trimiterea acțiunilor de automatizare în format conform documentației README
+ * @param {Worker} worker - Worker WebSocket
+ * @param {string} action - Tipul acțiunii de automatizare
+ * @returns {void}
+ */
+const sendAutomationAction = (worker, action) => {
   if (worker?.postMessage) {
     worker.postMessage({
-      type,
-      action
+      type: "automation_action",
+      payload: action
     });
+  } else {
+    console.warn("⚠️ Worker nu este disponibil pentru acțiunea:", action);
   }
 };
 
+/**
+ * Declanșează verificarea email-urilor de pe Booking.com
+ * @param {Worker} worker - Worker WebSocket
+ * @returns {void}
+ */
 export const triggerBookingEmailCheck = (worker) => {
-  sendWorkerMessage(
-    worker,
-    INCOMING_MESSAGE_TYPES.AUTOMATION_ACTION,
-    'BOOKING_EMAIL'
-  );
+  console.log("📨 Verificare automată email-uri Booking.com...");
+  sendAutomationAction(worker, "BOOKING_EMAIL");
 };
 
+/**
+ * Declanșează verificarea mesajelor de pe WhatsApp
+ * @param {Worker} worker - Worker WebSocket
+ * @returns {void}
+ */
 export const triggerWhatsAppCheck = (worker) => {
-  sendWorkerMessage(
-    worker,
-    INCOMING_MESSAGE_TYPES.AUTOMATION_ACTION,
-    'WHATSAPP_MESSAGE'
-  );
+  console.log("📱 Verificare automată mesaje WhatsApp...");
+  sendAutomationAction(worker, "WHATSAPP_MESSAGE");
 };
 
+/**
+ * Declanșează analiza de prețuri
+ * @param {Worker} worker - Worker WebSocket
+ * @returns {void}
+ */
 export const triggerPriceAnalysis = (worker) => {
-  sendWorkerMessage(
-    worker,
-    INCOMING_MESSAGE_TYPES.AUTOMATION_ACTION,
-    'PRICE_ANALYSIS'
-  );
+  console.log("📊 Analiză automată prețuri...");
+  sendAutomationAction(worker, "PRICE_ANALYSIS");
 }; 
