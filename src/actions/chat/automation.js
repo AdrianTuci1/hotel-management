@@ -1,4 +1,4 @@
-import { INCOMING_MESSAGE_TYPES } from './types';
+import { AUTOMATION_ACTIONS } from './types';
 
 /**
  * Helper pentru trimiterea acțiunilor de automatizare în format conform documentației README
@@ -8,10 +8,13 @@ import { INCOMING_MESSAGE_TYPES } from './types';
  */
 const sendAutomationAction = (worker, action) => {
   if (worker?.postMessage) {
+    // Formatăm mesajul exact cum e specificat în README
     worker.postMessage({
       type: "automation_action",
       payload: action
     });
+    
+    console.log(`🤖 Acțiune de automatizare trimisă: ${action}`);
   } else {
     console.warn("⚠️ Worker nu este disponibil pentru acțiunea:", action);
   }
@@ -24,7 +27,7 @@ const sendAutomationAction = (worker, action) => {
  */
 export const triggerBookingEmailCheck = (worker) => {
   console.log("📨 Verificare automată email-uri Booking.com...");
-  sendAutomationAction(worker, "BOOKING_EMAIL");
+  sendAutomationAction(worker, AUTOMATION_ACTIONS.BOOKING_EMAIL);
 };
 
 /**
@@ -34,7 +37,7 @@ export const triggerBookingEmailCheck = (worker) => {
  */
 export const triggerWhatsAppCheck = (worker) => {
   console.log("📱 Verificare automată mesaje WhatsApp...");
-  sendAutomationAction(worker, "WHATSAPP_MESSAGE");
+  sendAutomationAction(worker, AUTOMATION_ACTIONS.WHATSAPP_MESSAGE);
 };
 
 /**
@@ -44,5 +47,5 @@ export const triggerWhatsAppCheck = (worker) => {
  */
 export const triggerPriceAnalysis = (worker) => {
   console.log("📊 Analiză automată prețuri...");
-  sendAutomationAction(worker, "PRICE_ANALYSIS");
+  sendAutomationAction(worker, AUTOMATION_ACTIONS.PRICE_ANALYSIS);
 }; 

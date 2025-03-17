@@ -1,150 +1,231 @@
 import { useChatStore } from "../../store/chatStore";
 import { useCalendarStore } from "../../store/calendarStore";
-import { CHAT_INTENTS, NOTIFICATION_TYPES, RESPONSE_TYPES, VALID_INTENTS } from './types';
+import { CHAT_INTENTS, NOTIFICATION_TYPES, RESPONSE_TYPES, VALID_INTENTS, DISPLAY_COMPONENTS } from './types';
+
+// Maparea directă între intenții și componentele care trebuie afișate
+// Pentru a asigura consistența între handleIntent și DisplayPanel
+const INTENT_TO_COMPONENT_MAP = {
+  // Intenții directe de afișare
+  'show_calendar': DISPLAY_COMPONENTS.CALENDAR,
+  'calendar': DISPLAY_COMPONENTS.CALENDAR,
+  'show_pos': DISPLAY_COMPONENTS.POS,
+  'pos': DISPLAY_COMPONENTS.POS,
+  'show_stock': DISPLAY_COMPONENTS.STOCK,
+  'stock': DISPLAY_COMPONENTS.STOCK,
+  'show_invoices': DISPLAY_COMPONENTS.INVOICES,
+  'invoices': DISPLAY_COMPONENTS.INVOICES,
+  'show_reports': DISPLAY_COMPONENTS.REPORTS,
+  'reports': DISPLAY_COMPONENTS.REPORTS,
+  
+  // Intenții funcționale care deschid componente specifice
+  'reservation': DISPLAY_COMPONENTS.CALENDAR,
+  'modify_reservation': DISPLAY_COMPONENTS.CALENDAR,
+  'create_room': DISPLAY_COMPONENTS.CALENDAR,
+  'modify_room': DISPLAY_COMPONENTS.CALENDAR,
+  'sell_product': DISPLAY_COMPONENTS.POS
+};
 
 /**
- * Procesează un răspuns de chat și actualizează UI-ul
- * Conform protocolului descris în README
- * @param {Object} payload - Răspunsul de procesat
- * @param {Object} actions - Acțiunile disponibile
+ * Process a chat response and update the UI
+ * @param {Object} payload - The response to process
+ * @param {Object} actions - The available actions
  */
 export const handleChatResponse = (payload, { addMessage, setDisplayComponent }) => {
-  if (!payload || !payload.response) {
-    console.error("❌ Payload invalid pentru răspuns chat:", payload);
-    return;
-  }
-
-  const { intent, message, type: responseType, extraIntents, reservation } = payload.response;
-
-  /**
-   * TOATE SUNT CHAT RESPONSE, DOAR TYPE-UL E DIFERIT
-   * NE VA AJUTA SA IDENTIFICAM TIPUL DE RASPUNS
-   * NE VA AJUTA SA IDENTIFICAM TIPUL DE COMPONENTA
-   */
-
-  console.group("🤖 Procesare răspuns chat");
-  console.log("Intent:", intent);
-  console.log("Tip răspuns:", responseType);
-  console.log("Mesaj:", message);
-  console.log("Extra intents:", extraIntents);
-  console.log("Rezervare:", reservation);
-  console.groupEnd();
-
-  // Formatăm rezervarea dacă există
-  const formattedReservation = reservation ? {
-    id: reservation.id || null,
-    fullName: reservation.guestName || "Oaspete nou",
-    preferences: reservation.preferences || [],
-    startDate: reservation.startDate,
-    endDate: reservation.endDate,
-    roomNumber: reservation.roomNumber,
-    type: reservation.roomType,
-    status: reservation.status || "confirmed"
-  } : null;
-
-  // Adăugăm răspunsul în chat
-  addMessage({
-    text: message,
-    type: responseType === RESPONSE_TYPES.ERROR ? "error" : "bot",
-    reservation: formattedReservation,
-  });
-
-  // Gestionăm deschiderea panourilor UI
-  if (intent) handleIntent(intent, setDisplayComponent);
-  if (Array.isArray(extraIntents) && extraIntents.length > 0) {
-    console.log("📌 Procesare intenții adiționale:", extraIntents);
-    extraIntents.forEach(extraIntent => handleIntent(extraIntent, setDisplayComponent));
-  }
-};
-
-/**
- * Procesează o actualizare de rezervări
- * Conform protocolului descris în README
- * @param {Object} payload - Actualizarea de procesat
- * @param {Object} actions - Acțiunile disponibile
- */
-export const handleReservationsUpdate = (payload, { setReservations }) => {
-  console.group("🏨 Actualizare Rezervări");
-  console.log("Rezervări primite:", payload);
+  console.group("🤖 [HANDLERS] Processing chat response");
+  console.log("Raw payload:", payload);
   
-  // Verificăm dacă payload-ul are formatul corect
-  if (Array.isArray(payload)) {
-    // Format simplu - array direct de rezervări
-    console.log("📅 Procesare array de rezervări");
-    setReservations(payload);
-  } else if (payload.reservations && Array.isArray(payload.reservations)) {
-    // Format structurat din README
-    console.log(`📅 Procesare actualizare de tip: ${payload.action || 'necunoscut'}`);
-    setReservations(payload.reservations);
-  } else {
-    console.error("❌ Format invalid pentru actualizare rezervări:", payload);
-  }
-  
-  console.groupEnd();
-};
-
-/**
- * Procesează o actualizare de camere
- * @param {Object} payload - Actualizarea de procesat
- */
-export const handleRoomsUpdate = (payload) => {
-  const { rooms: currentRooms, setRooms } = useCalendarStore.getState();
-  
-  console.group("🏠 Actualizare Camere");
-  console.log("Payload primit:", payload);
-  
-  // Normalizăm payload-ul
-  const roomsToUpdate = Array.isArray(payload) ? payload : (payload.rooms || []);
-  
-  if (roomsToUpdate.length > 0) {
-    // Actualizăm doar camerele care au fost modificate
-    const updatedRooms = currentRooms.map(currentRoom => {
-      const updatedRoom = roomsToUpdate.find(r => r.number === currentRoom.number);
-      return updatedRoom || currentRoom;
-    });
-    
-    // Adăugăm camerele noi care nu existau
-    const newRooms = roomsToUpdate.filter(
-      newRoom => !currentRooms.some(r => r.number === newRoom.number)
-    );
-    
-    const finalRooms = [...updatedRooms, ...newRooms];
-    console.log("🏠 Camere actualizate:", finalRooms.length);
-    setRooms(finalRooms);
-  } else {
-    console.error("❌ Nu s-au găsit camere în payload:", payload);
-  }
-  
-  console.groupEnd();
-};
-
-/**
- * Procesează o notificare
- * Conform tipurilor de notificări din README
- * @param {Object} payload - Notificarea de procesat
- */
-export const handleNotification = (payload) => {
-  const { addMessage } = useChatStore.getState();
-  
-  console.group("🔔 Procesare notificare");
-  console.log("Payload notificare:", payload);
-  
-  // Verificăm dacă payload-ul are formatul corect
-  if (!payload || !payload.message) {
-    console.error("❌ Format invalid pentru notificare:", payload);
+  if (!payload) {
+    console.error("❌ [HANDLERS] Payload missing for chat response");
     console.groupEnd();
     return;
   }
   
-  // Normalizăm tipul notificării
-  const notificationType = payload.title in NOTIFICATION_TYPES 
-    ? payload.title 
-    : 'Notificare sistem';
+  // PRIORITY CHECK - EXACT HOTEL-BACKEND FORMAT
+  if (payload.intent === 'show_calendar' && 
+      payload.type === 'action' && 
+      payload.action === 'show_calendar') {
+    
+    console.log("🎯🎯🎯 [HANDLERS] FORMAT HOTEL-BACKEND DETECTAT!");
+    
+    // Adăugăm mesaj în chat
+    if (typeof addMessage === 'function') {
+      addMessage({
+        text: payload.message || '📅 Se deschide calendarul rezervărilor...',
+        type: "ai",
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      useChatStore.getState().addMessage({
+        text: payload.message || '📅 Se deschide calendarul rezervărilor...',
+        type: "ai",
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Setăm intent-ul și componenta
+    useChatStore.getState().setLatestIntent('show_calendar');
+    useChatStore.getState().setDisplayComponent('calendar');
+    
+    console.groupEnd();
+    return; // Early return - am tratat cazul special
+  }
+  
+  // Extract data from the payload
+  const { 
+    intent, 
+    message, 
+    type: responseType, 
+    extraIntents, 
+    reservation, 
+    room, 
+    product, 
+    action 
+  } = payload;
+
+  // Determine message type based on response type
+  let messageType = responseType === "error" ? "error" : "bot";
+  let messageData = {};
+  
+  // Process reservation data if present
+  if (reservation) {
+    messageData.reservation = {
+      id: reservation.id || null,
+      fullName: reservation.guestName || "New Guest",
+      preferences: reservation.preferences || [],
+      startDate: reservation.startDate,
+      endDate: reservation.endDate,
+      roomNumber: reservation.roomNumber,
+      type: reservation.roomType,
+      status: reservation.status || "confirmed"
+    };
+  }
+  
+  // Process room data if present
+  if (room) {
+    messageData.room = {
+      number: room.number || "",
+      type: room.type || "",
+      status: room.status || "available",
+      features: room.features || []
+    };
+  }
+  
+  // Process product data if present
+  if (product) {
+    messageData.product = {
+      id: product.id || null,
+      name: product.name || "",
+      price: product.price || 0,
+      quantity: product.quantity || 1,
+      total: product.total || 0
+    };
+  }
+
+  // Add message to chat
+  if (message) {
+    if (typeof addMessage === 'function') {
+      addMessage({
+        text: message,
+        type: messageType,
+        ...messageData
+      });
+    } else {
+      useChatStore.getState().addMessage({
+        text: message,
+        type: messageType,
+        ...messageData
+      });
+    }
+  }
+
+  // Procesare simplificată pentru toate intent-urile
+  // Verificăm dacă avem un intent și îl procesăm
+  if (intent) {
+    // Store the intent
+    useChatStore.getState().setLatestIntent(intent.toLowerCase());
+    
+    // Vedem dacă avem un component UI asociat
+    const componentToShow = INTENT_TO_COMPONENT_MAP[intent.toLowerCase()];
+    if (componentToShow) {
+      console.log(`[HANDLERS] Setting display component: ${componentToShow}`);
+      
+      // Setăm componenta
+      if (typeof setDisplayComponent === 'function') {
+        setDisplayComponent(componentToShow);
+      } else {
+        useChatStore.getState().setDisplayComponent(componentToShow);
+      }
+    }
+  } 
+  // Dacă nu avem intent dar avem action care poate fi interpretat ca intent
+  else if (action && typeof action === 'string' && action.startsWith('show_')) {
+    console.log(`[HANDLERS] Using action as intent: ${action}`);
+    useChatStore.getState().setLatestIntent(action.toLowerCase());
+    
+    const componentToShow = INTENT_TO_COMPONENT_MAP[action.toLowerCase()];
+    if (componentToShow) {
+      if (typeof setDisplayComponent === 'function') {
+        setDisplayComponent(componentToShow);
+      } else {
+        useChatStore.getState().setDisplayComponent(componentToShow);
+      }
+    }
+  }
+  
+  console.groupEnd();
+};
+
+/**
+ * Process a reservations update
+ * @param {Object} payload - The update to process
+ * @param {Object} actions - The available actions
+ */
+export const handleReservationsUpdate = (payload, { setReservations }) => {
+  console.group("🏨 [HANDLERS] Processing reservations update");
+  
+  if (!payload) {
+    console.error("❌ [HANDLERS] Invalid payload for reservations update");
+    console.groupEnd();
+    return;
+  }
+  
+  // Handle array of reservations
+  if (Array.isArray(payload)) {
+    setReservations(payload);
+    console.groupEnd();
+    return;
+  }
+  
+  // Handle object with reservations array
+  if (payload.reservations && Array.isArray(payload.reservations)) {
+    setReservations(payload.reservations);
+    console.groupEnd();
+    return;
+  }
+  
+  console.error("❌ [HANDLERS] Invalid format for reservations update:", payload);
+  console.groupEnd();
+};
+
+/**
+ * Process a notification
+ * @param {Object} payload - The notification to process
+ */
+export const handleNotification = (payload) => {
+  const { addMessage } = useChatStore.getState();
+  
+  console.group("🔔 [HANDLERS] Processing notification");
+  
+  if (!payload || !payload.message) {
+    console.error("❌ [HANDLERS] Invalid format for notification");
+    console.groupEnd();
+    return;
+  }
   
   addMessage({
     type: 'notification',
     text: payload.message,
-    title: notificationType,
+    title: payload.title || 'System Notification',
     ...payload
   });
   
@@ -152,30 +233,34 @@ export const handleNotification = (payload) => {
 };
 
 /**
- * Procesează o intenție și actualizează interfața în consecință
- * @param {string} intent - Intenția primită
- * @param {Function} setDisplayComponent - Funcție pentru setarea componentei display
+ * Process an intent and update the UI accordingly
+ * @param {string} intent - The intent received
+ * @param {Function} setDisplayComponent - Optional function to set the display component
+ * @returns {boolean} - True if intent triggered a UI update, false otherwise
  */
 export const handleIntent = (intent, setDisplayComponent) => {
-  console.log(`🎯 Procesare intenție: ${intent}`);
+  if (!intent) return false;
   
-  // Obținem funcția setLatestIntent din store
-  const { setLatestIntent } = useChatStore.getState();
+  // Standardize intent (lowercase for case-insensitive comparison)
+  const standardizedIntent = intent.toLowerCase();
   
-  // Verificăm dacă intenția este validă pentru UI
-  const validIntent = intent.toLowerCase();
+  // Store the latest intent regardless of what happens next
+  useChatStore.getState().setLatestIntent(standardizedIntent);
   
-  if (VALID_INTENTS.includes(validIntent)) {
-    // Stocăm ultima intenție în chat store
-    setLatestIntent(validIntent);
+  // Check if we have a direct component mapping
+  if (standardizedIntent in INTENT_TO_COMPONENT_MAP) {
+    const componentToShow = INTENT_TO_COMPONENT_MAP[standardizedIntent];
     
-    // Extragem tipul de componentă din intenție
-    const componentType = validIntent.replace("show_", "");
-    console.log(`📌 Deschidem panoul: ${componentType}`);
+    // Use the provided setDisplayComponent or the one from the store
+    if (typeof setDisplayComponent === 'function') {
+      setDisplayComponent(componentToShow);
+    } else {
+      useChatStore.getState().setDisplayComponent(componentToShow);
+    }
     
-    // Activăm componenta corespunzătoare
-    setDisplayComponent(componentType);
-  } else {
-    console.log(`ℹ️ Intenția "${intent}" nu necesită deschiderea unui panou specific.`);
+    return true;
   }
+  
+  // No direct mapping found
+  return false;
 }; 

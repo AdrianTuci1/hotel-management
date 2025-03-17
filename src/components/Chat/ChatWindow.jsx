@@ -193,7 +193,6 @@ const ChatWindow = () => {
     
     // Update the reference
     latestDatesRef.current = dates;
-    console.log('📅 Final dates being returned:', dates);
     
     return dates;
   };
