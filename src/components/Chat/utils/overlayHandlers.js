@@ -6,14 +6,14 @@
  * notifications, and other interactive elements.
  */
 
-import apiService from "../../../actions/apiService";
+import apiService from "../../../api/apiService";
 
 /**
  * Handles showing reservation details in the overlay
  * 
  * @param {Object} reservation - The reservation data to display
  * @param {Object} overlay - Current overlay state
- * @param {Function} setOverlay - Function to update overlay state
+ * @param {Function} showOverlay - Function to show overlay (from ChatStore)
  * @param {Function} resetRoomOptions - Function to reset room options
  * @param {Function} setDefaultDates - Function to set default calendar dates
  * @param {Function} updateViewPeriod - Function to update calendar view period
@@ -27,7 +27,7 @@ import apiService from "../../../actions/apiService";
 export const handleShowDetails = (
   reservation,
   overlay,
-  setOverlay,
+  showOverlay,
   resetRoomOptions,
   setDefaultDates,
   updateViewPeriod,
@@ -96,11 +96,8 @@ export const handleShowDetails = (
     console.log('🔍 DEBUG - Setting dates from reservation:', reservation.startDate, reservation.endDate);
   }
 
-  setOverlay({
-    isVisible: true,
-    type: 'reservation',
-    data: initialData
-  });
+  // Utilizăm funcția showOverlay din ChatStore
+  showOverlay('reservation', initialData);
 };
 
 /**
@@ -114,6 +111,7 @@ export const handleShowDetails = (
 export const handleOverlayAction = async (action, data, options) => {
   const {
     setOverlay,
+    closeOverlay,
     selectedRooms,
     getRoomInfo,
     addMessage,
@@ -123,7 +121,8 @@ export const handleOverlayAction = async (action, data, options) => {
 
   switch (action) {
     case 'updateReservation':
-      setOverlay(prev => ({ ...prev, data }));
+      // Actualizează datele overlay-ului fără a-l închide
+      setOverlay(data);
       break;
 
     case 'finalizeReservation':
@@ -146,17 +145,18 @@ export const handleOverlayAction = async (action, data, options) => {
           }
           
           addMessage({
-            type: "bot",
+            type: "ai",
             text: `Rezervare finalizată cu succes pentru camera ${room.roomNumber} în perioada ${room.startDate} - ${room.endDate}.`
           });
         }
 
-        setOverlay({ isVisible: false, type: null, data: null });
+        // Închide overlay-ul
+        closeOverlay();
         resetRoomOptions();
       } catch (error) {
         console.error('Error saving reservation:', error);
         addMessage({
-          type: "bot",
+          type: "error",
           text: "❌ A apărut o eroare la salvarea rezervării!"
         });
       }
@@ -170,11 +170,12 @@ export const handleOverlayAction = async (action, data, options) => {
         }
         
         addMessage({
-          type: "bot",
+          type: "ai",
           text: "Rezervarea a fost anulată."
         });
         
-        setOverlay({ isVisible: false, type: null, data: null });
+        // Închide overlay-ul
+        closeOverlay();
         resetRoomOptions();
       }
       break;
@@ -182,7 +183,24 @@ export const handleOverlayAction = async (action, data, options) => {
     case 'acceptNotification':
     case 'dismissNotification':
       // Handle notification actions
-      setOverlay({ isVisible: false, type: null, data: null });
+      closeOverlay();
+      break;
+
+    // Acțiuni pentru overlay de analiză
+    case 'exportAnalysis':
+      addMessage({
+        type: "ai",
+        text: "Raportul a fost exportat cu succes."
+      });
+      closeOverlay();
+      break;
+
+    case 'applyRecommendation':
+      addMessage({
+        type: "ai",
+        text: `Recomandarea "${data.title}" a fost aplicată.`
+      });
+      closeOverlay();
       break;
 
     default:

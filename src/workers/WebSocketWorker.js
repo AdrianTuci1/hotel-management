@@ -1,31 +1,64 @@
+/**
+ * @fileoverview Worker pentru comunicarea WebSocket cu backend-ul.
+ * 
+ * Acest worker:
+ * 1. Gestionează conexiunea WebSocket cu serverul backend
+ * 2. Primește mesaje de la firul principal și le trimite la server
+ * 3. Procesează mesaje de la server și le trimite înapoi la firul principal
+ * 4. Gestionează reconnectare în caz de erori
+ * 
+ * Protocolul pentru comunicarea cu firul principal:
+ * 
+ * Mesaje primite (de la firul principal):
+ * - {type: "init"} - Inițializare conexiune
+ * - {type: "send_message", payload: Object|String} - Trimite mesaj la server
+ * - {type: "automation_action", payload: String} - Trimite acțiune de automatizare
+ * - {type: "reservation_action", payload: Object} - Trimite acțiune pentru rezervări
+ * 
+ * Mesaje trimise (către firul principal):
+ * - {type: "STATUS", payload: "connected"|"disconnected"} - Status conexiune
+ * - {type: "CHAT_MESSAGE", payload: Object} - Mesaj de chat de la server
+ * - {type: "RESERVATION_ACTION", payload: Object} - Acțiune pentru rezervări
+ * - {type: "AUTOMATION_ACTION", payload: Object} - Acțiune de automatizare/notificare
+ */
+
 /// <reference lib="webworker" />
 
+// Configurație pentru conectare WebSocket
 const SOCKET_URL = "ws://localhost:5001/api/chat";
 let socket = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
-const RECONNECT_INTERVAL = 5000; // 5 seconds
+const RECONNECT_INTERVAL = 5000; // 5 secunde
 
-// 🔹 Connect to WebSocket server
+/**
+ * Conectează la serverul WebSocket și configurează handleri pentru evenimente
+ * 
+ * @returns {void}
+ */
 const connectWebSocket = () => {
   socket = new WebSocket(SOCKET_URL);
 
+  // Handler pentru conectare reușită
   socket.onopen = () => {
     console.log("✅ [WEBSOCKET] Connected to", SOCKET_URL);
     postMessage({ type: "STATUS", payload: "connected" });
     reconnectAttempts = 0;
   };
 
+  // Handler pentru mesaje primite de la server
   socket.onmessage = (event) => {
     // Log raw message for debugging
     console.group("🔍 [WEBSOCKET] MESSAGE RECEIVED");
     console.log("Raw data:", event.data);
     
-    // 1. HOTEL-BACKEND DIRECT OBJECT FORMAT
+    // ======== STRATEGIE DE PROCESARE ÎN ETAPE ========
+    
+    // 1. PROCESARE FORMAT DIRECT OBIECT
     if (typeof event.data === 'object' && event.data !== null) {
       const directData = event.data;
       
-      // Formatul exact hotel-backend
+      // Detecție format specific pentru show_calendar
       if (directData.intent === 'show_calendar' && 
           directData.type === 'action' && 
           directData.action === 'show_calendar') {
@@ -42,18 +75,21 @@ const connectWebSocket = () => {
         return; // Oprește procesarea ulterioară
       }
       
-      // Generic direct object handling
+      // Procesare generică obiect direct
       if (directData.intent || directData.action) {
+        // Mesaje cu intent sau action -> CHAT_MESSAGE
         postMessage({
           type: "CHAT_MESSAGE",
           payload: directData
         });
       } else if (Array.isArray(directData.reservations)) {
+        // Mesaje cu rezervări -> RESERVATION_ACTION
         postMessage({
           type: "RESERVATION_ACTION",
           payload: directData
         });
       } else {
+        // Alte formate -> default CHAT_MESSAGE
         postMessage({
           type: "CHAT_MESSAGE",
           payload: directData
@@ -64,7 +100,7 @@ const connectWebSocket = () => {
       return;
     }
     
-    // 2. JSON STRING FORMAT
+    // 2. PROCESARE FORMAT JSON STRING
     if (typeof event.data === 'string') {
       try {
         const message = JSON.parse(event.data);
@@ -85,23 +121,23 @@ const connectWebSocket = () => {
           return;
         }
         
-        // Handle other standard formats
+        // Procesare tipuri standard de mesaje
         if (message.intent) {
-          // Format cu intent direct
+          // Format cu intent direct -> CHAT_MESSAGE
           postMessage({ 
             type: "CHAT_MESSAGE", 
             payload: message
           });
         }
         else if (message.response && message.response.intent) {
-          // Format cu response wrapper
+          // Format cu response wrapper -> CHAT_MESSAGE cu payload response
           postMessage({ 
             type: "CHAT_MESSAGE", 
             payload: message.response 
           });
         }
         else if (Array.isArray(message) || (message.reservations && Array.isArray(message.reservations))) {
-          // Format rezervări
+          // Format rezervări -> RESERVATION_ACTION
           const reservations = Array.isArray(message) ? message : message.reservations;
           postMessage({ 
             type: "RESERVATION_ACTION", 
@@ -112,7 +148,7 @@ const connectWebSocket = () => {
           });
         }
         else if (message.action && typeof message.action === 'string') {
-          // Format action -> tratat ca intent
+          // Format action transformată în intent dacă este show_*
           const intent = message.action.startsWith('show_') ? message.action : null;
           
           if (intent) {
@@ -126,12 +162,12 @@ const connectWebSocket = () => {
               }
             });
           } else {
-            // Trimitem ca atare
+            // Trimitem ca atare -> CHAT_MESSAGE
             postMessage({ type: "CHAT_MESSAGE", payload: message });
           }
         }
         else if (message.type) {
-          // Handle based on message type
+          // Procesare bazată pe tipul mesajului
           const upperType = message.type.toUpperCase();
           
           if (["CHAT_RESPONSE", "MESSAGE", "CHAT"].includes(upperType)) {
@@ -144,11 +180,12 @@ const connectWebSocket = () => {
             postMessage({ type: "AUTOMATION_ACTION", payload: message });
           }
           else {
+            // Default -> CHAT_MESSAGE
             postMessage({ type: "CHAT_MESSAGE", payload: message });
           }
         }
         else if (message.message && typeof message.message === 'string') {
-          // Simple message
+          // Mesaj simplu -> CHAT_MESSAGE format standard
           postMessage({ 
             type: "CHAT_MESSAGE", 
             payload: {
@@ -159,7 +196,7 @@ const connectWebSocket = () => {
           });
         }
         else {
-          // Unknown format
+          // Format necunoscut -> CHAT_MESSAGE cu avertisment
           postMessage({ 
             type: "CHAT_MESSAGE", 
             payload: { 
@@ -171,7 +208,7 @@ const connectWebSocket = () => {
           });
         }
       } catch (error) {
-        // Error processing JSON
+        // Eroare la procesarea JSON
         console.error("❌ [WEBSOCKET] Error parsing message:", error.message);
         postMessage({ 
           type: "CHAT_MESSAGE", 
@@ -186,15 +223,17 @@ const connectWebSocket = () => {
       return;
     }
     
-    // Unknown data type
+    // Format necunoscut de date
     console.warn("❓ [WEBSOCKET] Unknown message data type:", typeof event.data);
     console.groupEnd();
   };
 
+  // Handler pentru închiderea conexiunii
   socket.onclose = () => {
     console.warn("⚠️ [WEBSOCKET] Connection closed");
     postMessage({ type: "STATUS", payload: "disconnected" });
 
+    // Mecanism de reconnectare cu număr maxim de încercări
     if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
       reconnectAttempts++;
       console.log(`🔄 [WEBSOCKET] Reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
@@ -204,6 +243,7 @@ const connectWebSocket = () => {
     }
   };
 
+  // Handler pentru erori
   socket.onerror = (error) => {
     console.error("❌ [WEBSOCKET] WebSocket error:", error);
     postMessage({ 
@@ -216,38 +256,49 @@ const connectWebSocket = () => {
   };
 };
 
-// Connect WebSocket when worker starts
+// Inițializare conexiune WebSocket la pornirea worker-ului
 connectWebSocket();
 
-// Handle messages from the main thread
+/**
+ * Handler pentru mesaje primite de la firul principal
+ * 
+ * Procesează următoarele tipuri de mesaje:
+ * - init: Inițializare/reinițializare conexiune
+ * - send_message: Trimite mesaj către server
+ * - automation_action: Trimite acțiune de automatizare
+ * - reservation_action: Trimite acțiune pentru rezervări
+ */
 self.onmessage = (event) => {
   console.log("📥 [WEBSOCKET] Message from main thread:", event.data);
   
   const { type, payload } = event.data;
 
+  // Inițializare conexiune
   if (type === "init") {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
       console.log("🔄 [WEBSOCKET] Initializing connection");
       connectWebSocket();
     }
-  } else if (type === "send_message") {
+  } 
+  // Trimitere mesaj către server
+  else if (type === "send_message") {
     if (socket && socket.readyState === WebSocket.OPEN) {
       let messageToSend;
       
-      // Handle string or object payload
+      // Procesare payload string sau obiect
       if (typeof payload === 'string') {
         try {
-          // Try to parse as JSON first
+          // Încercăm parsarea ca JSON
           messageToSend = JSON.parse(payload);
         } catch (e) {
-          // If not JSON, wrap it as CHAT_MESSAGE
+          // Dacă nu e JSON, îl împachetăm ca CHAT_MESSAGE
           messageToSend = { 
             type: "CHAT_MESSAGE",
             content: payload
           };
         }
       } else {
-        // If already an object, use it directly
+        // Dacă e deja obiect, îl folosim direct
         messageToSend = payload;
       }
       
@@ -263,16 +314,18 @@ self.onmessage = (event) => {
         } 
       });
       
-      // Try to reconnect
+      // Încercăm reconnectarea
       if (!socket || socket.readyState !== WebSocket.CONNECTING) {
         connectWebSocket();
       }
     }
-  } else if (type === "automation_action") {
+  } 
+  // Trimitere acțiune automată
+  else if (type === "automation_action") {
     if (socket && socket.readyState === WebSocket.OPEN) {
       console.log("🤖 [WEBSOCKET] Sending automation action:", payload);
       
-      // Format according to protocol
+      // Format conform protocolului
       socket.send(JSON.stringify({ 
         type: "AUTOMATION_ACTION", 
         action: payload
@@ -280,17 +333,19 @@ self.onmessage = (event) => {
     } else {
       console.warn("⚠️ [WEBSOCKET] WebSocket not connected, automation action not sent");
     }
-  } else if (type === "reservation_action") {
+  } 
+  // Trimitere acțiune rezervare
+  else if (type === "reservation_action") {
     if (socket && socket.readyState === WebSocket.OPEN) {
       console.log("🏨 [WEBSOCKET] Sending reservation action:", payload);
       
-      // Ensure payload has all required fields
+      // Verificare câmpuri obligatorii
       if (!payload.action) {
         console.error("❌ [WEBSOCKET] Missing action field in reservation action");
         return;
       }
       
-      // Format according to protocol
+      // Format conform protocolului
       socket.send(JSON.stringify({ 
         type: "RESERVATION_ACTION", 
         action: payload.action,

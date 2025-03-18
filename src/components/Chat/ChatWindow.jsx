@@ -33,6 +33,12 @@ const ChatWindow = () => {
   const latestIntent = useChatStore((state) => state.latestIntent);
   const latestUserMessage = useChatStore((state) => state.latestUserMessage);
   
+  // Overlay state din ChatStore
+  const overlay = useChatStore((state) => state.overlay);
+  const showOverlay = useChatStore((state) => state.showOverlay);
+  const updateOverlayData = useChatStore((state) => state.updateOverlayData);
+  const closeOverlay = useChatStore((state) => state.closeOverlay);
+  
   // Filter out user messages from the main chat display
   const nonUserMessages = messages.filter(message => message.type !== "user");
   
@@ -47,13 +53,6 @@ const ChatWindow = () => {
     setHighlightedRoom,
     reset: resetRoomOptions
   } = useRoomOptionsStore();
-
-  // Local overlay state
-  const [overlay, setOverlay] = useState({
-    isVisible: false,
-    type: null,
-    data: null
-  });
 
   // Keep a reference to the latest defaultDates
   const latestDatesRef = useRef({
@@ -100,7 +99,7 @@ const ChatWindow = () => {
     handleShowDetails(
       reservation,
       overlay,
-      setOverlay,
+      showOverlay,
       resetRoomOptions,
       setDefaultDates,
       updateViewPeriod,
@@ -120,7 +119,8 @@ const ChatWindow = () => {
    */
   const onOverlayAction = async (action, data) => {
     await handleOverlayAction(action, data, {
-      setOverlay,
+      setOverlay: updateOverlayData,
+      closeOverlay,
       selectedRooms,
       getRoomInfo,
       addMessage,
@@ -134,16 +134,45 @@ const ChatWindow = () => {
    * When closing a reservation overlay, the message is not restored to chat
    */
   const handleCloseOverlay = () => {
-    // Don't restore the message when simply closing the overlay
-    // The message will only be restored when explicitly finalizing or deleting
+    // Obținem ID-ul mesajului asociat cu overlay-ul curent, dacă există
+    const messageId = overlay.data?.messageId;
     
-    setOverlay({ isVisible: false, type: null, data: null });
+    // Obținem tipul overlay-ului curent
+    const overlayType = overlay.type;
+    
+    // Închide overlay-ul
+    closeOverlay();
+    
+    // Resetează opțiunile pentru camere
     resetRoomOptions();
-    // Reset local default dates
+    
+    // Resetează datele implicite pentru dată
     setLocalDefaultDates({
       startDate: '',
       endDate: ''
     });
+    
+    // Dacă overlay-ul era de tip rezervare și avem un messageId asociat, atunci:
+    // 1. Fie restaurăm mesajul (commented out - dezactivat momentan)
+    // 2. Fie îl marcăm ca procesat pentru a evita reprocesarea
+    if (overlayType === 'reservation' && messageId) {
+      console.log("🔄 [CHAT_WINDOW] Marcăm mesajul ca procesat:", messageId);
+      
+      // Opțiunea 1: Restaurează mesajul în chat cu flag-ul de anulare
+      // restoreMessage(messageId, true);
+      
+      // Opțiunea 2: Restaurează mesajul în chat și apoi îl elimină imediat
+      // Acest lucru "consumă" mesajul și previne reprocesarea
+      const originalMessage = restoreMessage(messageId, false);
+      
+      if (originalMessage) {
+        // După 10ms, eliminăm din nou mesajul pentru a-l curăța complet
+        setTimeout(() => {
+          console.log("🧹 [CHAT_WINDOW] Curățăm mesajul procesat:", messageId);
+          removeMessage(messageId);
+        }, 10);
+      }
+    }
   };
 
   /**
@@ -153,48 +182,33 @@ const ChatWindow = () => {
     setShowCommands(!showCommands);
   };
 
-  // Get the default dates from the reservation in overlay data
+  /**
+   * Get default dates for reservation
+   * This helps with coordinating dates between overlay and calendar
+   */
   const getDefaultDates = () => {
-    
-    let dates = { startDate: '', endDate: '' };
-    
-    // Try to get dates from different possible locations in the overlay data
-    if (overlay.data) {
-      
-      // Direct properties of overlay.data
-      if (overlay.data.startDate && overlay.data.endDate) {
-        dates = {
-          startDate: overlay.data.startDate,
-          endDate: overlay.data.endDate
-        };
-      }
-      // Check if dates are in the rooms array (first room)
-      else if (overlay.data.rooms && overlay.data.rooms.length > 0) {
-        const firstRoom = overlay.data.rooms[0];
-        
-        if (firstRoom.startDate && firstRoom.endDate) {
-          dates = {
-            startDate: firstRoom.startDate,
-            endDate: firstRoom.endDate
-          };
-          console.log('📅 Using dates from first room:', dates);
-        }
-      }
-    }
-    
-    // Fallback to selectedRooms if no dates found
-    if (!dates.startDate && !dates.endDate && selectedRooms.length > 0) {
-      
-      dates = {
-        startDate: selectedRooms[0].startDate || '',
-        endDate: selectedRooms[0].endDate || ''
+    // Try to get dates from overlay data first
+    if (overlay.data && overlay.data.startDate && overlay.data.endDate) {
+      return {
+        startDate: overlay.data.startDate,
+        endDate: overlay.data.endDate
       };
     }
-    
-    // Update the reference
-    latestDatesRef.current = dates;
-    
-    return dates;
+
+    // Fall back to dates from selectedRooms
+    if (selectedRooms.length > 0) {
+      const firstRoom = selectedRooms[0];
+      return {
+        startDate: firstRoom.startDate,
+        endDate: firstRoom.endDate
+      };
+    }
+
+    // No dates available
+    return {
+      startDate: '',
+      endDate: ''
+    };
   };
 
   // Handle local updates to default dates

@@ -7,6 +7,13 @@ export const useChatStore = create((set, get) => ({
   displayComponent: null,
   latestIntent: null, // Track the latest intent
   latestUserMessage: null, // Track the latest user message
+  
+  // Stare pentru overlay
+  overlay: {
+    isVisible: false,
+    type: null,
+    data: null
+  },
 
   // 🔹 Adăugăm mesaj în chat
   addMessage: (message) => set((state) => {
@@ -69,9 +76,14 @@ export const useChatStore = create((set, get) => ({
   }),
 
   // 🔹 Restore a message to chat
-  restoreMessage: (messageId, markAsCanceled = false) => set((state) => {
+  restoreMessage: (messageId, markAsCanceled = false) => {
+    const state = get();
     const message = state.hiddenMessages[messageId];
-    if (!message) return state;
+    
+    if (!message) {
+      console.log("⚠️ [CHAT_STORE] Încercare de restaurare a unui mesaj inexistent:", messageId);
+      return null;
+    }
 
     const restoredMessage = markAsCanceled
       ? { ...message, isCanceled: true }
@@ -79,11 +91,17 @@ export const useChatStore = create((set, get) => ({
 
     const { [messageId]: _, ...remainingHiddenMessages } = state.hiddenMessages;
 
-    return {
+    // Update state
+    set({
       messages: [...state.messages, restoredMessage],
       hiddenMessages: remainingHiddenMessages
-    };
-  }),
+    });
+    
+    console.log("✅ [CHAT_STORE] Mesaj restaurat cu ID:", messageId);
+    
+    // Return the restored message for confirmation
+    return restoredMessage;
+  },
 
   // 🔹 Setăm componenta UI activă pentru afișare
   setDisplayComponent: (component) => {
@@ -163,12 +181,77 @@ export const useChatStore = create((set, get) => ({
     set({ displayComponent: null });
   },
 
+  // 🔹 Funcții pentru gestionarea overlay-ului
+  
+  // Deschide un overlay nou
+  showOverlay: (type, data) => {
+    console.group("🔍 [CHAT_STORE] showOverlay");
+    console.log("Tip overlay:", type);
+    console.log("Date:", data);
+    
+    set({
+      overlay: {
+        isVisible: true,
+        type,
+        data
+      }
+    });
+    
+    console.log("✅ Overlay deschis");
+    console.groupEnd();
+  },
+  
+  // Actualizează datele unui overlay existent
+  updateOverlayData: (data) => {
+    console.log("🔄 [CHAT_STORE] updateOverlayData:", data);
+    set(state => ({
+      overlay: {
+        ...state.overlay,
+        data: {
+          ...state.overlay.data,
+          ...data
+        }
+      }
+    }));
+  },
+  
+  // Închide overlay-ul
+  closeOverlay: () => {
+    console.group("❌ [CHAT_STORE] closeOverlay");
+    
+    // Log starea curentă a overlay-ului înainte de închidere pentru debugging
+    const currentOverlay = get().overlay;
+    console.log("Overlay înainte de închidere:", currentOverlay);
+    
+    // Dacă overlay-ul are un messageId, afișează un avertisment
+    if (currentOverlay.data?.messageId) {
+      console.log("⚠️ [CHAT_STORE] Overlay-ul are un messageId asociat:", currentOverlay.data.messageId);
+      console.log("⚠️ [CHAT_STORE] Asigurați-vă că este gestionat corespunzător în ChatWindow");
+    }
+    
+    set({
+      overlay: {
+        isVisible: false,
+        type: null,
+        data: null
+      }
+    });
+    
+    console.log("✅ Overlay închis");
+    console.groupEnd();
+  },
+
   // 🔹 Resetăm chat-ul
   resetChat: () => set({ 
     messages: [], 
     hiddenMessages: {}, 
     displayComponent: null,
     latestIntent: null,
-    latestUserMessage: null
+    latestUserMessage: null,
+    overlay: {
+      isVisible: false,
+      type: null,
+      data: null
+    }
   }),
 }));

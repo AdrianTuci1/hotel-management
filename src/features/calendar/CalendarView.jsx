@@ -6,7 +6,7 @@ import { generateDatesArray, isDateRangeOverlapping, isDateInRange } from "./uti
 import { useDragScroll } from "./hooks/useDragScroll";
 import DateSelector from "./components/DateSelector";
 import CalendarTable from "./components/CalendarTable";
-import { ROOM_STATUS, RESERVATION_STATUS } from "../../actions/chat/types";
+import { ROOM_STATUS } from "../../actions/types";
 import styles from "./CalendarView.module.css";
 
 const CalendarView = () => {

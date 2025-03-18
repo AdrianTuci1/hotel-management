@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import apiService from "../actions/apiService";
+import apiService from "../api/apiService";
 
 export const useCalendarStore = create((set, get) => ({
   rooms: [],

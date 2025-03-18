@@ -1,47 +1,55 @@
-import { useChatStore } from "../store/chatStore";
-import { useCalendarStore } from "../store/calendarStore";
-import { INCOMING_MESSAGE_TYPES, CHAT_INTENTS, RESPONSE_TYPES } from './chat/types';
-import { handleChatResponse, handleReservationsUpdate, handleNotification } from './chat/handlers';
-import { connectSocket, getWorker, sendMessage } from './chat/worker';
-import { triggerBookingEmailCheck, triggerWhatsAppCheck, triggerPriceAnalysis } from './chat/automation';
-
 /**
  * @fileoverview Gestionează acțiunile principale ale sistemului de chat.
- * Acest modul coordonează comunicarea între UI, WebSocket Worker și handlere.
+ * 
+ * Acest modul coordonează comunicarea între:
+ * - Interfața utilizator (UI)
+ * - WebSocket Worker (canal de comunicare cu backend-ul)
+ * - Handlere pentru procesarea răspunsurilor
+ * 
+ * Fluxul de date:
+ * 1. UI trimite mesaj text către chatActions (handleChatMessage)
+ * 2. chatActions formatează și trimite mesajul către WebSocketWorker
+ * 3. WebSocketWorker primește răspunsul și îl trimite înapoi la chatActions
+ * 4. chatActions normalizează tipul mesajului și îl direcționează către handlerul potrivit
+ * 5. Handlerul actualizează UI-ul și starea aplicației
  */
 
-/**
- * Normalize the message type to match our simplified system
- * @param {string} type - The message type received
- * @returns {string} - The normalized type
- */
-const normalizeMessageType = (type) => {
-  if (!type) return INCOMING_MESSAGE_TYPES.CHAT_MESSAGE;
-  
-  // Convert to uppercase for consistent comparison
-  const upperType = type.toUpperCase();
-  
-  // Map to our three main types
-  if (["CHAT", "CHAT_RESPONSE", "CHAT_MESSAGE", "MESSAGE"].includes(upperType)) {
-    return INCOMING_MESSAGE_TYPES.CHAT_MESSAGE;
-  } 
-  else if (["RESERVATION", "RESERVATIONS_UPDATE", "BOOKING", "RESERVATION_ACTION"].includes(upperType)) {
-    return INCOMING_MESSAGE_TYPES.RESERVATION_ACTION;
-  }
-  else if (["AUTOMATION", "AUTOMATION_ACTION", "NOTIFICATION"].includes(upperType)) {
-    return INCOMING_MESSAGE_TYPES.AUTOMATION_ACTION;
-  }
-  
-  // Default to chat message if unknown
-  return INCOMING_MESSAGE_TYPES.CHAT_MESSAGE;
-};
+import { useChatStore } from "../store/chatStore";
+import { useCalendarStore } from "../store/calendarStore";
+import { 
+  normalizeMessageType, 
+  parseChatMessage, 
+  parseReservationAction, 
+  parseAutomationAction, 
+  parseStatusMessage 
+} from './socket/messageParser';
+import { 
+  handleChatResponse, 
+  handleReservationsUpdate, 
+  handleNotification, 
+  handleConnectionStatus 
+} from './handlers';
+import { 
+  initializeWorker, 
+  getWorker, 
+  sendMessage 
+} from './socket/worker';
+import { INCOMING_MESSAGE_TYPES } from './types';
 
 /**
- * Initialize the chat system and set up message handlers
+ * Inițializează sistemul de chat și configurează handlerii de mesaje
+ * 
+ * Această funcție:
+ * 1. Conectează la serverul WebSocket prin intermediul unui worker
+ * 2. Configurează handler-ul pentru mesajele primite
+ * 3. Normalizează și direcționează mesajele către handlerele potrivite
+ * 
  * @returns {Promise<void>}
  */
 export const initializeChat = async () => {
-  const worker = await connectSocket();
+  console.group("🚀 [CHAT_ACTIONS] Initializing chat system");
+  
+  const worker = await initializeWorker();
   
   if (!worker) {
     console.error("❌ [CHAT_ACTIONS] Failed to initialize chat");
@@ -51,207 +59,86 @@ export const initializeChat = async () => {
 
   worker.onmessage = (event) => {
     console.group("📩 [CHAT_ACTIONS] Message received from worker");
-    console.log("Raw event data:", event.data);
-    console.log("Timestamp:", new Date().toISOString());
     
-    const { type: rawType, payload } = event.data;
-    console.log("Raw message type:", rawType);
-    
-    const { addMessage, setDisplayComponent } = useChatStore.getState();
-    const { setReservations } = useCalendarStore.getState();
-
-    if (!payload) {
-      console.error("❌ [CHAT_ACTIONS] Empty payload received");
+    if (!event || !event.data) {
+      console.error("❌ [CHAT_ACTIONS] Invalid event received from worker");
       console.groupEnd();
       return;
     }
-
-    // DETECTOR FORMAT HOTEL-BACKEND
-    if (payload.intent === 'show_calendar' && 
-        payload.type === 'action' && 
-        payload.action === 'show_calendar') {
-      
-      console.log("🎯 [CHAT_ACTIONS] FORMAT HOTEL-BACKEND DETECTAT");
-      
-      // 1. Adăugăm mesaj în chat
-      addMessage({
-        text: payload.message || '📅 Se deschide calendarul rezervărilor...',
-        type: "ai",
-        timestamp: new Date().toISOString()
-      });
-      
-      // 2. Setăm intent-ul
-      useChatStore.getState().setLatestIntent('show_calendar');
-      
-      // 3. Setăm componenta
-      useChatStore.getState().setDisplayComponent('calendar');
-      
+    
+    // Extract type and payload
+    const { type: rawType, payload } = event.data;
+    
+    if (!payload) {
+      console.error("❌ [CHAT_ACTIONS] Invalid payload received from worker");
       console.groupEnd();
-      return; // Early return pentru format special
+      return;
     }
-
-    // DETECTOR GENERAL PENTRU INTENT-URI
-    if (payload.intent || 
-        (payload.action && typeof payload.action === 'string' && payload.action.startsWith('show_'))) {
-      
-      // 1. Detectăm intent-ul
-      const detectedIntent = payload.intent || payload.action;
-      console.log("✓ [CHAT_ACTIONS] Intent detectat:", detectedIntent);
-      
-      // 2. Adăugăm mesaj în chat
-      const messageText = payload.message || `Procesăm intent: ${detectedIntent}`;
-      addMessage({
-        text: messageText,
-        type: "ai",
-        timestamp: new Date().toISOString()
-      });
-      
-      // 3. Setăm intent-ul
-      useChatStore.getState().setLatestIntent(detectedIntent);
-      
-      // 4. Setăm componenta corespunzătoare
-      const componentMap = {
-        'show_calendar': 'calendar',
-        'calendar': 'calendar',
-        'reservation': 'calendar',
-        'modify_reservation': 'calendar',
-        'add_phone': 'calendar',
-        'create_room': 'calendar',
-        'modify_room': 'calendar',
-        'show_pos': 'pos',
-        'pos': 'pos',
-        'sell_product': 'pos',
-        'show_invoices': 'invoices',
-        'invoices': 'invoices',
-        'show_stock': 'stock',
-        'stock': 'stock',
-        'show_reports': 'reports',
-        'reports': 'reports'
-      };
-      
-      const componentToShow = componentMap[detectedIntent.toLowerCase()] || null;
-      
-      if (componentToShow) {
-        useChatStore.getState().setDisplayComponent(componentToShow);
-        console.groupEnd();
-        return; // Early return, am tratat cazul
-      }
-    }
-
+    
+    console.log("Message type:", rawType);
+    console.log("Payload:", payload);
+    
     // Normalize the message type
     const messageType = normalizeMessageType(rawType);
+    console.log("Normalized message type:", messageType);
     
+    // Get store actions
+    const { addMessage, setDisplayComponent } = useChatStore.getState();
+    const { setReservations } = useCalendarStore.getState();
+    
+    // Process based on message type
     switch (messageType) {
       case INCOMING_MESSAGE_TYPES.CHAT_MESSAGE:
-        console.log("[CHAT_ACTIONS] Processing as chat message");
+        // Parsăm și normalizăm mesajul
+        const normalizedChatMessage = parseChatMessage(payload);
+        console.log("Normalized chat message:", normalizedChatMessage);
         
-        // SPECIAL CASE - DIRECT INTENT HANDLER
-        if (payload.intent) {
-          console.log("[CHAT_ACTIONS] Intent detected:", payload.intent);
-          
-          // Special handler pentru intent show_calendar
-          if (payload.intent === 'show_calendar') {
-            console.log("🎯🎯 [CHAT_ACTIONS] Show calendar intent direct detectat! (secondary detector)");
-            
-            // Adăugăm mesaj în chat
-            addMessage({
-              text: payload.message || '📅 Se deschide calendarul rezervărilor...',
-              type: "ai",
-              timestamp: new Date().toISOString()
-            });
-            
-            // Setăm direct componenta UI
-            console.log("✅ [CHAT_ACTIONS] Setăm direct displayComponent la 'calendar'");
-            useChatStore.getState().setDisplayComponent('calendar');
-            
-            console.groupEnd();
-            return; // Early return
-          }
-          
-          // Pentru alte intenții, trecem la handler normal
-          console.log("[CHAT_ACTIONS] Full payload:", payload);
-          
-          // Pass to handler, ensuring UI components update
-          handleChatResponse(payload, { addMessage, setDisplayComponent });
-        } 
-        // Priority 2: Handle error messages
-        else if (payload.type === "error") {
-          console.error("[CHAT_ACTIONS] Error message:", payload.message);
-          addMessage({
-            type: "error",
-            text: payload.message || "An error occurred"
-          });
-        }
-        // Priority 3: Handle regular messages with message field
-        else if (payload.message) {
-          console.log("[CHAT_ACTIONS] Simple message:", payload.message);
-          
-          // If message has no intent but might need UI updates, create a minimal structure
-          // that can be processed by handleChatResponse
-          handleChatResponse({
-            intent: payload.intent || "default",
-            type: payload.type || "message",
-            message: payload.message,
-            // Include any other fields from the original payload
-            ...payload
-          }, { addMessage, setDisplayComponent });
-        }
-        // Fallback for completely unknown format
-        else {
-          console.warn("[CHAT_ACTIONS] Unknown chat message format:", payload);
-          addMessage({
-            type: "bot",
-            text: "Received message in unknown format"
-          });
-        }
+        // Trimitem la handler
+        handleChatResponse(normalizedChatMessage, { addMessage, setDisplayComponent });
         break;
 
       case INCOMING_MESSAGE_TYPES.RESERVATION_ACTION:
-        console.log("[CHAT_ACTIONS] Processing as reservation action");
+        // Parsăm și normalizăm acțiunea de rezervare
+        const normalizedReservationAction = parseReservationAction(payload);
+        console.log("Normalized reservation action:", normalizedReservationAction);
         
-        // Handle array of reservations
-        if (Array.isArray(payload)) {
-          handleReservationsUpdate({ action: "init", reservations: payload }, { setReservations });
-        }
-        // Handle reservation action object
-        else if (payload.reservations || payload.action) {
-          handleReservationsUpdate(payload, { setReservations });
-        }
-        // Fallback
-        else {
-          console.warn("[CHAT_ACTIONS] Unknown reservation format:", payload);
-        }
+        // Trimitem la handler
+        handleReservationsUpdate(normalizedReservationAction, { setReservations });
         break;
 
       case INCOMING_MESSAGE_TYPES.AUTOMATION_ACTION:
-        console.log("[CHAT_ACTIONS] Processing as automation action");
+        // Parsăm și normalizăm acțiunea de automatizare
+        const normalizedAutomationAction = parseAutomationAction(payload);
+        console.log("Normalized automation action:", normalizedAutomationAction);
         
-        // Handle notification format
-        if (payload.message) {
-          handleNotification(payload);
-        }
-        // Fallback
-        else {
-          console.warn("[CHAT_ACTIONS] Unknown automation format:", payload);
-        }
+        // Trimitem la handler
+        handleNotification(normalizedAutomationAction);
+        break;
+        
+      case INCOMING_MESSAGE_TYPES.STATUS:
+        // Parsăm și normalizăm mesajul de status
+        const normalizedStatus = parseStatusMessage(payload);
+        console.log("Normalized status:", normalizedStatus);
+        
+        // Trimitem la handler
+        handleConnectionStatus(normalizedStatus);
         break;
 
       default:
-        console.warn("[CHAT_ACTIONS] Unhandled message type:", messageType);
-        // Try to determine message type from payload structure and find a suitable handler
+        console.warn("⚠️ [CHAT_ACTIONS] Unhandled message type:", messageType);
+        // Încercăm să detectăm formatul și să-l direcționăm
         if (typeof payload === 'object') {
-          if (payload.intent) {
-            // If it has an intent, treat as chat response
-            handleChatResponse(payload, { addMessage, setDisplayComponent });
+          if (payload.intent || payload.action) {
+            // Probabil un mesaj de chat
+            handleChatResponse(parseChatMessage(payload), { addMessage, setDisplayComponent });
+          }
+          else if (Array.isArray(payload) || payload.reservations) {
+            // Probabil o acțiune de rezervare
+            handleReservationsUpdate(parseReservationAction(payload), { setReservations });
           }
           else if (payload.message) {
-            // If it has a message, add it to chat
-            addMessage({
-              type: "bot",
-              text: payload.message
-            });
-          } else {
-            console.error("[CHAT_ACTIONS] Couldn't process message:", payload);
+            // Default la mesaj de chat
+            handleChatResponse(parseChatMessage(payload), { addMessage, setDisplayComponent });
           }
         }
         break;
@@ -265,8 +152,14 @@ export const initializeChat = async () => {
 };
 
 /**
- * Process and send a chat message
- * @param {string} message - The message to send
+ * Procesează și trimite un mesaj de chat către server
+ * 
+ * Această funcție:
+ * 1. Adaugă mesajul utilizatorului în UI
+ * 2. Formatează mesajul conform protocolului backend-ului
+ * 3. Trimite mesajul către server prin WebSocket Worker
+ * 
+ * @param {string} message - Mesajul de trimis
  * @returns {Promise<void>}
  */
 export const handleChatMessage = async (message) => {
@@ -274,34 +167,33 @@ export const handleChatMessage = async (message) => {
   console.log("Message to send:", message);
   
   const { addMessage } = useChatStore.getState();
-  // Add user message to the chat UI
+  // Adăugăm mesajul utilizatorului în UI
   addMessage({ text: message, type: "user" });
 
-  // Get or create worker
+  // Obținem worker-ul sau îl creăm
   let worker = getWorker();
-  console.log("Worker exists:", !!worker);
   
   if (!worker) {
     console.log("[CHAT_ACTIONS] Worker doesn't exist, trying to connect...");
-    worker = await connectSocket();
-    console.log("Connection result:", !!worker);
+    worker = await initializeWorker();
   }
 
   try {
     console.log("Sending message to worker...");
     
-    // Format message according to backend protocol
-    const formattedMessage = JSON.stringify({
+    // Formatăm mesajul conform protocolului backend
+    const formattedMessage = {
       type: "CHAT_MESSAGE",
       content: message
-    });
+    };
     
     const result = sendMessage(formattedMessage);
-    console.log("Message sent successfully:", result);
     
     if (!result) {
       throw new Error("Web Worker is not available");
     }
+    
+    console.log("Message sent successfully");
   } catch (error) {
     console.error("❌ [CHAT_ACTIONS] Error sending message:", error);
     addMessage({
@@ -317,14 +209,18 @@ export const handleChatMessage = async (message) => {
 };
 
 /**
- * Check for new emails from Booking.com
+ * Verifică email-urile noi de la Booking.com
+ * 
+ * Declanșează o acțiune automată de verificare a email-urilor noi
+ * Răspunsul va veni ca un mesaj AUTOMATION_ACTION
+ * 
  * @returns {void}
  */
 export const checkBookingEmails = () => {
   console.log("📨 [CHAT_ACTIONS] Checking Booking.com emails...");
   const worker = getWorker();
   if (worker) {
-    // Format automation action according to protocol
+    // Formatăm acțiunea de automatizare conform protocolului
     worker.postMessage({
       type: "automation_action",
       payload: "BOOKING_EMAIL"
@@ -335,14 +231,18 @@ export const checkBookingEmails = () => {
 };
 
 /**
- * Check for new WhatsApp messages
+ * Verifică mesajele noi de pe WhatsApp
+ * 
+ * Declanșează o acțiune automată de verificare a mesajelor WhatsApp
+ * Răspunsul va veni ca un mesaj AUTOMATION_ACTION
+ * 
  * @returns {void}
  */
 export const checkWhatsAppMessages = () => {
   console.log("📱 [CHAT_ACTIONS] Checking WhatsApp messages...");
   const worker = getWorker();
   if (worker) {
-    // Format automation action according to protocol
+    // Formatăm acțiunea de automatizare conform protocolului
     worker.postMessage({
       type: "automation_action",
       payload: "WHATSAPP_MESSAGE"
@@ -353,19 +253,98 @@ export const checkWhatsAppMessages = () => {
 };
 
 /**
- * Trigger price analysis
+ * Declanșează analiza prețurilor
+ * 
+ * Declanșează o acțiune automată de analiză a prețurilor
+ * Răspunsul va veni ca un mesaj AUTOMATION_ACTION
+ * 
  * @returns {void}
  */
 export const analyzePrices = () => {
   console.log("📊 [CHAT_ACTIONS] Analyzing prices...");
   const worker = getWorker();
   if (worker) {
-    // Format automation action according to protocol
+    // Formatăm acțiunea de automatizare conform protocolului
     worker.postMessage({
       type: "automation_action",
       payload: "PRICE_ANALYSIS"
     });
   } else {
     console.warn("⚠️ [CHAT_ACTIONS] Worker is not available for price analysis");
+  }
+};
+
+/**
+ * Testează fluxul de procesare a unui mesaj de rezervare
+ * 
+ * Această funcție este pentru debugging și poate fi apelată manual
+ * din consolă pentru a simula primirea unui mesaj de rezervare.
+ * 
+ * @example
+ * // Import funcția pentru test
+ * import { testReservationFlow } from './path/to/chatActions';
+ * 
+ * // Apelează funcția
+ * testReservationFlow();
+ * 
+ * @param {Object} customData - Opțional, date de test personalizate
+ * @returns {void}
+ */
+export const testReservationFlow = (customData = null) => {
+  console.group("🧪 [TEST] Simulăm procesare eveniment de rezervare");
+  
+  // Date de test, exact ca în exemplul utilizatorului
+  const testEvent = customData || {
+    type: 'CHAT_MESSAGE', 
+    payload: {
+      extraIntents: ['show_calendar'],
+      intent: "reservation",
+      message: "Se deschide formularul pentru o rezervare nouă pentru Ana de la 2025-03-17 până la 2025-03-18",
+      reservation: {
+        fullName: 'Ana', 
+        roomType: 'twin', 
+        startDate: '2025-03-17', 
+        endDate: '2025-03-18'
+      },
+      type: "info"
+    }
+  };
+  
+  console.log("📩 Date de test:", testEvent);
+  
+  // Simulăm cum ar fi primit mesajul de la WebSocket Worker
+  const { type: rawType, payload } = testEvent;
+  const messageType = normalizeMessageType(rawType);
+  
+  console.log("Tip mesaj normalizat:", messageType);
+  
+  if (messageType === INCOMING_MESSAGE_TYPES.CHAT_MESSAGE) {
+    console.log("Tratăm ca CHAT_MESSAGE");
+    
+    // Parsăm și normalizăm mesajul
+    const normalizedMessage = parseChatMessage(payload);
+    
+    // Apelăm handleChatResponse pentru a trata mesajul
+    handleChatResponse(normalizedMessage, {
+      addMessage: useChatStore.getState().addMessage,
+      setDisplayComponent: useChatStore.getState().setDisplayComponent
+    });
+    
+    // Verificăm starea overlay-ului
+    setTimeout(() => {
+      const overlayState = useChatStore.getState().overlay;
+      console.log("Starea overlay după procesare:", overlayState);
+      
+      if (overlayState.isVisible && overlayState.type === 'reservation') {
+        console.log("✅ TEST PASSED: Overlay s-a deschis corect");
+      } else {
+        console.log("❌ TEST FAILED: Overlay nu s-a deschis");
+      }
+      
+      console.groupEnd();
+    }, 100);
+  } else {
+    console.log("❌ [TEST] Tip de mesaj nepotrivit:", messageType);
+    console.groupEnd();
   }
 };

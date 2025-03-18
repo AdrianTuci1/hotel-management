@@ -8,7 +8,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import styles from './ChatOverlay.module.css';
 import ReservationDetails from '../ReservationDetails';
-import { IconX, IconChartBar, IconBell } from '@tabler/icons-react';
+import RoomManagement from '../RoomManagement/RoomManagement';
+import AddPhoneNumber from '../AddPhoneNumber/AddPhoneNumber';
+import ProductSales from '../ProductSales/ProductSales';
+import { IconChartBar, IconBell } from '@tabler/icons-react';
 
 /**
  * Overlay types enum for better type checking
@@ -16,7 +19,10 @@ import { IconX, IconChartBar, IconBell } from '@tabler/icons-react';
 export const OVERLAY_TYPES = {
   RESERVATION: 'reservation',
   NOTIFICATION: 'notification',
-  ANALYSIS: 'analysis'
+  ANALYSIS: 'analysis',
+  ROOM_MANAGEMENT: 'roomManagement',
+  ADD_PHONE: 'addPhone',
+  PRODUCT_SALES: 'productSales'
 };
 
 /**
@@ -58,8 +64,6 @@ const ChatOverlay = ({
             roomManagement={roomManagement}
           />
         );
-
-      case OVERLAY_TYPES.NOTIFICATION:
         return (
           <div className={styles.notification}>
             <div className={styles.notificationHeader}>
@@ -92,7 +96,6 @@ const ChatOverlay = ({
           </div>
         );
 
-      case OVERLAY_TYPES.ANALYSIS:
         return (
           <div className={styles.analysis}>
             <div className={styles.analysisHeader}>
@@ -135,6 +138,15 @@ const ChatOverlay = ({
             </div>
           </div>
         );
+
+      case OVERLAY_TYPES.ROOM_MANAGEMENT:
+        return <RoomManagement room={data.room} onAction={onAction} onClose={onClose} />;
+
+      case OVERLAY_TYPES.ADD_PHONE:
+        return <AddPhoneNumber data={data} onAction={onAction} onClose={onClose} />;
+
+      case OVERLAY_TYPES.PRODUCT_SALES:
+        return <ProductSales products={data.products} reservation={data.reservation || null} onAction={onAction} onClose={onClose} />;
 
       default:
         return <div>Unsupported overlay type</div>;
