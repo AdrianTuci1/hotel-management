@@ -38,6 +38,7 @@ const ChatWindow = () => {
   const showOverlay = useChatStore((state) => state.showOverlay);
   const updateOverlayData = useChatStore((state) => state.updateOverlayData);
   const closeOverlay = useChatStore((state) => state.closeOverlay);
+  const resetChat = useChatStore((state) => state.resetChat);
   
   // Filter out user messages from the main chat display
   const nonUserMessages = messages.filter(message => message.type !== "user");
@@ -134,14 +135,31 @@ const ChatWindow = () => {
    * When closing a reservation overlay, the message is not restored to chat
    */
   const handleCloseOverlay = () => {
+    console.group("🔍 [CHAT_WINDOW] handleCloseOverlay");
+    console.log("Closing overlay with type:", overlay.type);
+    console.log("Overlay data:", overlay.data);
+
     // Obținem ID-ul mesajului asociat cu overlay-ul curent, dacă există
     const messageId = overlay.data?.messageId;
     
     // Obținem tipul overlay-ului curent
     const overlayType = overlay.type;
     
+    console.log("Calling closeOverlay() function");
     // Închide overlay-ul
     closeOverlay();
+    console.log("Overlay state after closeOverlay():", useChatStore.getState().overlay);
+    
+    // Verifică dacă overlay-ul s-a închis cu succes
+    if (useChatStore.getState().overlay.isVisible) {
+      console.log("❌ [CHAT_WINDOW] Overlay nu s-a închis corect, folosim resetChat");
+      // Folosim resetChat pentru a forța curățarea completă a stării
+      // Atenție: Acest lucru va reseta tot chat-ul, nu doar overlay-ul
+      const currentMessages = [...useChatStore.getState().messages];
+      resetChat();
+      // Restaurăm mesajele după resetare
+      currentMessages.forEach(msg => addMessage(msg));
+    }
     
     // Resetează opțiunile pentru camere
     resetRoomOptions();
@@ -173,6 +191,7 @@ const ChatWindow = () => {
         }, 10);
       }
     }
+    console.groupEnd();
   };
 
   /**

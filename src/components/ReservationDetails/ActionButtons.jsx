@@ -3,6 +3,17 @@ import styles from './ReservationDetails.module.css';
 import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
 
 const ActionButtons = ({ onSave, onDelete, onCancel }) => {
+  const handleCancel = () => {
+    console.log("🔍 [ActionButtons] Cancel button clicked");
+    console.log("onCancel type:", typeof onCancel);
+    if (typeof onCancel === 'function') {
+      console.log("Calling onCancel function");
+      onCancel();
+    } else {
+      console.error("❌ onCancel is not a function:", onCancel);
+    }
+  };
+
   return (
     <div className={styles.actionButtons}>
       <button 
@@ -14,7 +25,7 @@ const ActionButtons = ({ onSave, onDelete, onCancel }) => {
       </button>
       <button 
         className={styles.cancelButton} 
-        onClick={onCancel}
+        onClick={handleCancel}
       >
         <IconX size={16} />
         Renunță

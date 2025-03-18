@@ -58,7 +58,14 @@ const ReservationDetails = ({
   };
 
   const handleCancel = () => {
-    onCancel();
+    console.log("🔍 [ReservationDetails] handleCancel called");
+    console.log("onCancel type:", typeof onCancel);
+    if (typeof onCancel === 'function') {
+      console.log("Calling onCancel function from ReservationDetails");
+      onCancel();
+    } else {
+      console.error("❌ onCancel is not a function:", onCancel);
+    }
   };
 
   const handleDelete = () => {

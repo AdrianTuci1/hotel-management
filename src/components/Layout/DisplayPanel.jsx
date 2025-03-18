@@ -9,6 +9,8 @@ import AnalysisView from "../../features/analysis/AnalysisView";
 import ReportsView from "../../features/reports/ReportsView";
 import { IconX } from "@tabler/icons-react";
 import styles from "./DisplayPanel.module.css";
+import { updateCalendarDateRangeFromChat, calculateTwoWeekPeriod } from "../../features/calendar/utils/calendarHelpers";
+import { CHAT_INTENTS } from "../../actions/types";
 
 // Mapare completă pentru toate tipurile de componente și intențiile posibile
 const COMPONENT_MAP = {
@@ -42,13 +44,17 @@ const DisplayPanel = () => {
 
   // Detector pentru formatul hotel-backend
   useEffect(() => {
-    if (latestIntent === 'show_calendar') {
+    if (latestIntent === CHAT_INTENTS.SHOW_CALENDAR) {
       console.log("🔍 [DisplayPanel] Detected show_calendar intent");
       setLastDetectedFormat('hotel-backend');
       
       // Dacă displayComponent nu este calendar, îl setăm
       if (!displayComponent || displayComponent.toLowerCase() !== 'calendar') {
         useChatStore.getState().setDisplayComponent('calendar');
+        
+        // Folosim noul helper pentru a actualiza perioada doar când vine prin chat
+        const { startDate, endDate } = calculateTwoWeekPeriod();
+        updateCalendarDateRangeFromChat(startDate, endDate, CHAT_INTENTS.SHOW_CALENDAR);
       }
     }
   }, [latestIntent, displayComponent]);
@@ -57,8 +63,16 @@ const DisplayPanel = () => {
   useEffect(() => {
     if (latestIntent && !displayComponent) {
       // Verificăm dacă este un intent pentru calendar
-      if (latestIntent.includes('calendar') || latestIntent === 'show_calendar') {
+      if (latestIntent.includes('calendar') || latestIntent === CHAT_INTENTS.SHOW_CALENDAR) {
         useChatStore.getState().setDisplayComponent('calendar');
+        
+        // Actualizăm perioada doar pentru intent-uri din chat
+        if (latestIntent === CHAT_INTENTS.SHOW_CALENDAR ||
+            latestIntent === CHAT_INTENTS.RESERVATION || 
+            latestIntent === CHAT_INTENTS.MODIFY_RESERVATION) {
+          const { startDate, endDate } = calculateTwoWeekPeriod();
+          updateCalendarDateRangeFromChat(startDate, endDate, latestIntent);
+        }
       }
     }
   }, [latestIntent, displayComponent]);
@@ -81,7 +95,6 @@ const DisplayPanel = () => {
       return (
         <div className={styles.panelContainer}>
           <div className={styles.panelHeader}>
-            <h2 className={styles.panelTitle}>Calendar & Rezervări</h2>
             <button 
               className={styles.closeButton} 
               onClick={closeDisplayComponent}
@@ -104,9 +117,6 @@ const DisplayPanel = () => {
   return (
     <div className={styles.panelContainer}>
       <div className={styles.panelHeader}>
-        <h2 className={styles.panelTitle}>
-          {getDisplayTitle(normalizedComponent)}
-        </h2>
         <button 
           className={styles.closeButton} 
           onClick={closeDisplayComponent}

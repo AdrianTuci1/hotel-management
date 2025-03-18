@@ -55,6 +55,9 @@ const CalendarView = () => {
       // Creăm opțiunea pentru cameră în formatul așteptat
       const options = [`Camera ${room.number} - ${room.type} (${room.basePrice} lei/noapte)`];
 
+      // ⚠️ IMPORTANT: Nu mai modificăm perioada de vizualizare când selectăm o rezervare
+      // Perioada se actualizează doar când vine din CHAT_INTENTS (vezi DisplayPanel.jsx)
+      
       // Adăugăm un mesaj în chat cu detaliile rezervării
       addMessage({
         type: "bot",

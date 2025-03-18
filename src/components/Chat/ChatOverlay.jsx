@@ -4,7 +4,7 @@
  * Renders an overlay with different content types (reservation details, notifications, analysis)
  * based on current chat interactions. Provides a modal-like experience within the chat interface.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import styles from './ChatOverlay.module.css';
 import ReservationDetails from '../ReservationDetails';
@@ -12,6 +12,7 @@ import RoomManagement from '../RoomManagement/RoomManagement';
 import AddPhoneNumber from '../AddPhoneNumber/AddPhoneNumber';
 import ProductSales from '../ProductSales/ProductSales';
 import { IconChartBar, IconBell } from '@tabler/icons-react';
+import { useChatStore } from '../../store/chatStore';
 
 /**
  * Overlay types enum for better type checking
@@ -46,24 +47,54 @@ const ChatOverlay = ({
   roomManagement
 }) => {
   if (!isVisible) return null;
+  
+  // Acces direct la closeOverlay din chatStore pentru cazurile când onClose nu funcționează
+  const closeOverlayFromStore = useChatStore(state => state.closeOverlay);
+
+  /**
+   * Handler pentru închiderea overlay-ului care asigură curățarea stării
+   */
+  const handleCancel = () => {
+    console.log("🔍 [ChatOverlay] handleCancel - Forțăm închiderea overlay-ului");
+
+    // Încercăm mai întâi cu onClose din props
+    if (typeof onClose === 'function') {
+      console.log("Calling onClose from props");
+      onClose();
+    }
+
+    // Verificăm dacă overlay-ul este încă vizibil
+    setTimeout(() => {
+      if (useChatStore.getState().overlay.isVisible) {
+        console.log("⚠️ [ChatOverlay] Overlay încă vizibil, forțăm închiderea direct din store");
+        closeOverlayFromStore();
+      }
+    }, 100);
+  };
 
   /**
    * Renders the appropriate content based on overlay type
    * @returns {JSX.Element} The rendered content
    */
   const renderContent = () => {
+    console.log("🔍 [ChatOverlay] renderContent called with type:", type);
+    console.log("onClose type:", typeof onClose);
+    
     switch (type) {
       case OVERLAY_TYPES.RESERVATION:
+        console.log("🔍 [ChatOverlay] Rendering RESERVATION type");
         return (
           <ReservationDetails 
             reservationData={data}
             setReservationData={(newData) => onAction('updateReservation', newData)}
             onFinalize={() => onAction('finalizeReservation', data)}
-            onCancel={onClose}
+            onCancel={handleCancel}
             onDelete={() => onAction('deleteReservation', data)}
             roomManagement={roomManagement}
           />
         );
+        
+      case OVERLAY_TYPES.NOTIFICATION:
         return (
           <div className={styles.notification}>
             <div className={styles.notificationHeader}>
@@ -96,6 +127,7 @@ const ChatOverlay = ({
           </div>
         );
 
+      case OVERLAY_TYPES.ANALYSIS:
         return (
           <div className={styles.analysis}>
             <div className={styles.analysisHeader}>
