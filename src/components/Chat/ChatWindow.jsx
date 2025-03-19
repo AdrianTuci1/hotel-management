@@ -13,7 +13,7 @@ import { useChatStore } from "../../store/chatStore";
 import useRoomOptionsStore from "../../store/roomOptionsStore";
 import { useCalendarStore } from "../../store/calendarStore";
 import { handleChatMessage, initializeChat } from "../../actions/chatActions";
-import { CHAT_COMMANDS } from "./constants/commands";
+import { CHAT_COMMANDS, STRUCTURED_COMMANDS, COMMAND_CATEGORIES } from "./constants/commands";
 import { 
   handleShowDetails, 
   handleOverlayAction 
@@ -265,12 +265,46 @@ const ChatWindow = () => {
       {/* Commands panel */}
       {showCommands && (
         <div className={styles.commandsPanel} role="region" aria-label="Available commands">
-          <h4>Comenzi Acceptate</h4>
-          <ul>
-            {CHAT_COMMANDS.map((cmd, idx) => (
-              <li key={idx}>{cmd}</li>
-            ))}
-          </ul>
+          <h4>
+            Comenzi Disponibile
+            <button 
+              className={styles.commandsClose} 
+              onClick={toggleCommands}
+              aria-label="Close commands panel"
+            >
+              ×
+            </button>
+          </h4>
+          
+          {/* Group commands by category */}
+          {Object.values(COMMAND_CATEGORIES).map(category => {
+            const commandsInCategory = STRUCTURED_COMMANDS.filter(
+              cmd => cmd.category === category
+            );
+            
+            if (commandsInCategory.length === 0) return null;
+            
+            return (
+              <div key={category}>
+                <h5 className={`${styles.commandCategory} ${styles[`category${category.replace(/\s+&\s+/g, '')}`]}`}>
+                  {category}
+                </h5>
+                <ul className={styles.commandsList}>
+                  {commandsInCategory.map((cmd, idx) => (
+                    <li key={idx} className={styles.commandItem}>
+                      <div className={styles.commandText}>{cmd.command}</div>
+                      <div className={styles.commandDescription}>{cmd.description}</div>
+                      {cmd.example && (
+                        <div className={styles.commandExample}>
+                          Exemplu: {cmd.example}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       )}
 

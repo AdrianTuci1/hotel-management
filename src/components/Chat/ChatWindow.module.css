@@ -35,56 +35,176 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  background: #10a37f;
+  width: 32px;
+  height: 32px;
+  background-color: #4a6fa5;
   color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: 50%;
   cursor: pointer;
-  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  z-index: 100;
+}
+
+.commandsButton:hover {
+  background-color: #3a5a8f;
+  transform: scale(1.05);
 }
 
 /* 🔹 Panel flotant pentru lista comenzilor */
 .commandsPanel {
   position: absolute;
-  top: 50px; /* sub buton */
+  top: 40px;
   right: 10px;
-  width: 250px;
-  background: #2b2b2b;
-  border: 1px solid #444;
-  border-radius: 6px;
-  padding: 12px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  width: 380px;
+  max-height: 80vh;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  z-index: 1000;
+  overflow-y: auto;
+  border: 1px solid #3a3a3a;
+  animation: fadeIn 0.2s ease-in-out;
+  overscroll-behavior: contain;
+  color: #e0e0e0;
 }
 
 .commandsPanel h4 {
-  margin-top: 0;
-  color: #fff;
-}
-
-.commandsPanel ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  color: #ccc;
-}
-
-.commandsPanel li {
-  margin: 4px 0;
-}
-
-.inputContainer {
-  width: 100%;
-  max-width: 800px;
-  margin: 10px auto;
-  padding: 12px;
-  background: #2b2b2b;
-  border-radius: 10px;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  font-size: 18px;
+  color: #e0e0e0;
+  border-bottom: 1px solid #3a3a3a;
   display: flex;
-  border: 1px solid #444;
-  position: sticky;
-  bottom: 0; /* Fixăm bara de input la marginea inferioară */
-}/* 🔹 Latest intent displayed in top-left corner */
+  align-items: center;
+  justify-content: space-between;
+}
+
+.commandsPanel h4::before {
+  content: "💬";
+  margin-right: 8px;
+}
+
+.commandsClose {
+  cursor: pointer;
+  font-size: 20px;
+  color: #aaa;
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.commandsClose:hover {
+  color: #fff;
+  background-color: #3a3a3a;
+}
+
+.commandCategory {
+  margin: 16px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #bbb;
+  display: flex;
+  align-items: center;
+}
+
+.commandCategory::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.categoryNavigare::before {
+  content: "🧭";
+}
+
+.categoryRezervări::before {
+  content: "📅";
+}
+
+.categoryCamere::before {
+  content: "🏠";
+}
+
+.categoryVânzări::before {
+  content: "🛒";
+}
+
+.categoryRapoarte::before {
+  content: "📊";
+}
+
+.categoryAjutor::before {
+  content: "❓";
+}
+
+.commandsList {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.commandItem {
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background-color: #333333;
+  border-radius: 6px;
+  border-left: 4px solid #4a6fa5;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+}
+
+.commandItem:hover {
+  background-color: #3a3a3a;
+  transform: translateX(2px);
+  border-left-color: #5a8ac5;
+}
+
+.commandText {
+  font-weight: 600;
+  color: #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.commandDescription {
+  color: #aaa;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.commandExample {
+  background-color: #252525;
+  font-family: monospace;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #62aaff;
+  font-size: 11px;
+  display: inline-block;
+  margin-top: 3px;
+  border: 1px solid #3a3a3a;
+}
+
+/* 🔹 Latest intent displayed in top-left corner */
 .latestIntent {
   position: absolute;
   top: 10px;
@@ -129,4 +249,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   align-self: flex-start; /* Align to the left */
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 } 
