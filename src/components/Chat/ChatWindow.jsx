@@ -13,7 +13,7 @@ import { useChatStore } from "../../store/chatStore";
 import useRoomOptionsStore from "../../store/roomOptionsStore";
 import { useCalendarStore } from "../../store/calendarStore";
 import { handleChatMessage, initializeChat } from "../../actions/chatActions";
-import { CHAT_COMMANDS, STRUCTURED_COMMANDS, COMMAND_CATEGORIES } from "./constants/commands";
+import { STRUCTURED_COMMANDS, COMMAND_CATEGORIES } from "./constants/commands";
 import { 
   handleShowDetails, 
   handleOverlayAction 

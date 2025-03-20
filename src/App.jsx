@@ -6,9 +6,9 @@ import AssistantsView from './components/Assistants/AssistantsView';
 import ScheduleView from './components/Schedule/ScheduleView';
 import { useNavigationStore } from './store/navigationStore';
 import styles from './App.module.css';
+import HistoryView from './components/History/HistoryView';
 
 // Placeholder components for other menus
-const History = () => <div className={styles.pageContainer}>Istoric activități</div>;
 const Restaurant = () => <div className={styles.pageContainer}>Pagina Restaurant</div>;
 const Reports = () => <div className={styles.pageContainer}>Pagina Rapoarte</div>;
 
@@ -17,7 +17,7 @@ const menuComponents = {
   dashboard: Dashboard,
   assistants: AssistantsView,
   schedule: ScheduleView,
-  history: History,
+  history: HistoryView,
   restaurant: Restaurant,
   reports: Reports,
 };

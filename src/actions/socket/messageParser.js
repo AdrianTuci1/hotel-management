@@ -155,32 +155,54 @@ export const parseReservationAction = (payload) => {
  * @returns {Object} Mesaj normalizat cu format standard
  */
 export const parseAutomationAction = (payload) => {
+  // Verificăm dacă avem un mesaj de automatizare complet
+  if (payload.notification) {
+    return {
+      type: "automation",
+      notification: {
+        type: payload.notification.type,
+        title: payload.notification.title || "Notificare automatizare",
+        message: payload.notification.message,
+        data: payload.notification.data
+      }
+    };
+  }
+
   // Caz 1: Mesaj cu acțiune și mesaj
   if (payload.action && payload.message) {
     return {
-      action: payload.action,
-      message: payload.message,
-      type: payload.type || "notification",
-      ...payload
+      type: "automation",
+      notification: {
+        type: payload.type || "notification",
+        title: payload.title || "Notificare automatizare",
+        message: payload.message,
+        data: payload.data
+      }
     };
   }
   
   // Caz 2: Doar mesaj
   if (payload.message) {
     return {
-      action: "notification",
-      message: payload.message,
-      type: "notification",
-      ...payload
+      type: "automation",
+      notification: {
+        type: "notification",
+        title: "Notificare automatizare",
+        message: payload.message,
+        data: payload.data
+      }
     };
   }
   
   // Default pentru cazuri necunoscute
   return {
-    action: "unknown",
-    message: "Received automation message in unknown format",
-    type: "notification",
-    originalData: payload
+    type: "automation",
+    notification: {
+      type: "notification",
+      title: "Notificare automatizare",
+      message: "Received automation message in unknown format",
+      data: payload
+    }
   };
 };
 

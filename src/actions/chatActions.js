@@ -98,50 +98,34 @@ export const initializeChat = async () => {
         break;
 
       case INCOMING_MESSAGE_TYPES.RESERVATION_ACTION:
-        // Parsăm și normalizăm acțiunea de rezervare
-        const normalizedReservationAction = parseReservationAction(payload);
-        console.log("Normalized reservation action:", normalizedReservationAction);
+        // Parsăm și normalizăm mesajul
+        const normalizedReservationMessage = parseReservationAction(payload);
+        console.log("Normalized reservation message:", normalizedReservationMessage);
         
         // Trimitem la handler
-        handleReservationsUpdate(normalizedReservationAction, { setReservations });
+        handleReservationsUpdate(normalizedReservationMessage, { setReservations });
         break;
 
       case INCOMING_MESSAGE_TYPES.AUTOMATION_ACTION:
-        // Parsăm și normalizăm acțiunea de automatizare
-        const normalizedAutomationAction = parseAutomationAction(payload);
-        console.log("Normalized automation action:", normalizedAutomationAction);
+        // Parsăm și normalizăm mesajul
+        const normalizedAutomationMessage = parseAutomationAction(payload);
+        console.log("Normalized automation message:", normalizedAutomationMessage);
         
         // Trimitem la handler
-        handleNotification(normalizedAutomationAction);
+        handleNotification(normalizedAutomationMessage);
         break;
-        
+
       case INCOMING_MESSAGE_TYPES.STATUS:
-        // Parsăm și normalizăm mesajul de status
-        const normalizedStatus = parseStatusMessage(payload);
-        console.log("Normalized status:", normalizedStatus);
+        // Parsăm și normalizăm mesajul
+        const normalizedStatusMessage = parseStatusMessage(payload);
+        console.log("Normalized status message:", normalizedStatusMessage);
         
         // Trimitem la handler
-        handleConnectionStatus(normalizedStatus);
+        handleConnectionStatus(normalizedStatusMessage);
         break;
 
       default:
-        console.warn("⚠️ [CHAT_ACTIONS] Unhandled message type:", messageType);
-        // Încercăm să detectăm formatul și să-l direcționăm
-        if (typeof payload === 'object') {
-          if (payload.intent || payload.action) {
-            // Probabil un mesaj de chat
-            handleChatResponse(parseChatMessage(payload), { addMessage, setDisplayComponent });
-          }
-          else if (Array.isArray(payload) || payload.reservations) {
-            // Probabil o acțiune de rezervare
-            handleReservationsUpdate(parseReservationAction(payload), { setReservations });
-          }
-          else if (payload.message) {
-            // Default la mesaj de chat
-            handleChatResponse(parseChatMessage(payload), { addMessage, setDisplayComponent });
-          }
-        }
-        break;
+        console.warn("⚠️ [CHAT_ACTIONS] Unknown message type:", messageType);
     }
     
     console.groupEnd();

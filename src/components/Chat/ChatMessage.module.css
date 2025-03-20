@@ -595,3 +595,113 @@
 .canceledIndicator svg {
   margin-right: 4px;
 }
+
+.dataSection {
+  margin-top: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.dataSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+  transition: background-color 0.2s;
+}
+
+.dataSectionHeader:hover {
+  background-color: #e9ecef;
+}
+
+.dataSectionHeader span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dataContent {
+  padding: 12px;
+  background-color: #ffffff;
+  border-top: 1px solid #e0e0e0;
+}
+
+.dataContent pre {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #212529;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+  background-color: #f8f9fa;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.confirmationMessage {
+  background-color: #e3f2fd;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 8px;
+  border-left: 4px solid #2196f3;
+}
+
+.confirmationLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1976d2;
+  margin: 0 0 4px 0;
+}
+
+.confirmationText {
+  font-size: 13px;
+  color: #2c3e50;
+  margin: 0;
+  white-space: pre-line;
+  line-height: 1.5;
+}
+
+.automationMessage {
+  background-color: #ffffff;
+  border-left: 4px solid #4a90e2;
+  padding: 16px;
+  margin: 8px 0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.automationIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: #e3f2fd;
+  border-radius: 50%;
+  margin-right: 12px;
+  color: #4a90e2;
+}
+
+.automationTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+}
+
+.automationMessage {
+  font-size: 14px;
+  color: #34495e;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}

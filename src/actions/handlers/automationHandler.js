@@ -21,24 +21,37 @@ export const handleNotification = (payload) => {
     console.groupEnd();
     return;
   }
+
+  const { addMessage } = useChatStore.getState();
   
-  // Adăugăm mesajul în chat
-  if (payload.message) {
-    const { addMessage } = useChatStore.getState();
+  // Verificăm dacă avem un mesaj de automatizare complet
+  if (payload.notification) {
+    addMessage({
+      type: "automation",
+      notification: {
+        type: payload.notification.type,
+        title: payload.notification.title || "Notificare automatizare",
+        message: payload.notification.message,
+        data: payload.notification.data
+      },
+      timestamp: new Date().toISOString()
+    });
     
+    console.log("✅ [AUTOMATION_HANDLER] Automation message added to chat");
+  }
+  // Caz pentru mesaje simple
+  else if (payload.message) {
     addMessage({
       text: payload.message,
       type: "notification",
       timestamp: new Date().toISOString()
     });
     
-    console.log("✅ [AUTOMATION_HANDLER] Notification added to chat");
+    console.log("✅ [AUTOMATION_HANDLER] Simple notification added to chat");
   }
   
   // Procesăm acțiuni specifice
   if (payload.action) {
-    // Aici putem adăuga logică pentru acțiuni specifice
-    // Exemplu: afișare dialog, deschidere modal, etc.
     console.log("Action:", payload.action);
     
     // Dacă action are format Intent, actualizăm starea
@@ -48,20 +61,8 @@ export const handleNotification = (payload) => {
       // Setăm intent-ul
       setLatestIntent(payload.action);
       
-      // Mapare directă între acțiuni și componente
-      const actionToComponent = {
-        'show_calendar': 'calendar',
-        'show_pos': 'pos',
-        'show_invoices': 'invoices',
-        'show_stock': 'stock',
-        'show_reports': 'reports'
-      };
-      
-      // Setăm componenta dacă există în mapare
-      if (actionToComponent[payload.action]) {
-        setDisplayComponent(actionToComponent[payload.action]);
-        console.log(`✅ [AUTOMATION_HANDLER] UI updated to: ${actionToComponent[payload.action]}`);
-      }
+      // Setăm componenta de afișare
+      setDisplayComponent(payload.action.replace('show_', ''));
     }
   }
   

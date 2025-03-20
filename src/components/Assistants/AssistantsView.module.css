@@ -1,35 +1,67 @@
 .container {
-  padding: 2rem;
-  max-width: 1200px;
+  padding: 1rem;
+  max-width: 100%;
   margin: 0 auto;
+  height: calc(100vh - 4rem); /* Înălțimea totală minus padding-ul */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .header {
   margin-bottom: 2rem;
+  flex-shrink: 0; /* Previne header-ul să se micșoreze */
 }
 
 .header h2 {
   font-size: 2rem;
-  color: #333;
-  margin: 0;
+  color: #fff;
+  margin-bottom: 0.5rem;
 }
 
 .header p {
-  color: #666;
-  margin: 0.5rem 0 0;
+  color: #a0aec0;
 }
 
 .assistantsList {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  flex: 1;
+  overflow-y: auto; /* Adăugăm scroll vertical */
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
+  padding-right: 1rem; /* Spațiu pentru scrollbar */
+}
+
+/* Stilizare scrollbar pentru dark theme */
+.assistantsList::-webkit-scrollbar {
+  width: 8px;
+}
+
+.assistantsList::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.assistantsList::-webkit-scrollbar-thumb {
+  background: #3d3d3d;
+  border-radius: 4px;
+}
+
+.assistantsList::-webkit-scrollbar-thumb:hover {
+  background: #4d4d4d;
 }
 
 .assistantCard {
-  background: white;
+  background: #1a1a1a;
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #2d2d2d;
+  transition: all 0.3s ease;
+}
+
+.assistantCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .assistantHeader {
@@ -41,27 +73,80 @@
 
 .assistantInfo {
   display: flex;
-  gap: 1rem;
   align-items: flex-start;
+  gap: 1rem;
 }
 
 .assistantIcon {
-  font-size: 2rem;
-  background: #f0f4f8;
-  padding: 0.75rem;
+  background: #2d2d2d;
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
 }
 
 .assistantInfo h3 {
-  margin: 0;
-  color: #333;
-  font-size: 1.25rem;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
 }
 
 .assistantInfo p {
-  margin: 0.25rem 0 0;
-  color: #666;
+  color: #a0aec0;
+  margin: 0;
   font-size: 0.9rem;
+}
+
+.statusContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.statusIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.statusIndicator.connected {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.statusIndicator.disconnected {
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.statusText {
+  color: #a0aec0;
+  font-size: 0.85rem;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.configToggle {
+  background: #2d2d2d;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.configToggle:hover {
+  background: #3d3d3d;
 }
 
 /* Switch toggle */
@@ -69,7 +154,7 @@
   position: relative;
   display: inline-block;
   width: 50px;
-  height: 26px;
+  height: 24px;
 }
 
 .switch input {
@@ -85,110 +170,270 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background-color: #2d2d2d;
   transition: .4s;
-  border-radius: 34px;
+  border-radius: 24px;
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
   background-color: white;
   transition: .4s;
   border-radius: 50%;
 }
 
 input:checked + .slider {
-  background-color: #2196F3;
+  background-color: #10b981;
 }
 
 input:checked + .slider:before {
-  transform: translateX(24px);
+  transform: translateX(26px);
 }
 
 /* Configuration section */
 .assistantConfig {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #f8f9fa;
+  background: #2d2d2d;
   border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
-.assistantConfig h4 {
-  margin: 0 0 1rem;
-  color: #333;
-  font-size: 1rem;
+.configSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .configItem {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .configItem label {
-  color: #555;
+  color: #fff;
   font-size: 0.9rem;
 }
 
-.configItem input[type="number"] {
-  width: 80px;
-  padding: 0.25rem;
-  border: 1px solid #ddd;
+.apiKeyInput {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.apiKeyInput input {
+  flex: 1;
+  background: #1a1a1a;
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  padding: 0.75rem;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.apiKeyInput input:focus {
+  outline: none;
+  border-color: #10b981;
+}
+
+.toggleVisibility {
+  background: #3d3d3d;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleVisibility:hover {
+  background: #4d4d4d;
+}
+
+.checkboxWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkboxWrapper input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
   border-radius: 4px;
+  border: 2px solid #3d3d3d;
+  background: #1a1a1a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checkboxWrapper input[type="checkbox"]:checked {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.checkboxWrapper label {
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.assistantMetrics {
+  margin-top: 1.5rem;
+}
+
+.assistantMetrics h4 {
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+/* Metrics section */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.metricCard {
+  background: #2d2d2d;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metricLabel {
+  color: #a0aec0;
+  font-size: 0.85rem;
+}
+
+.metricValue {
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.metricTrend {
+  font-size: 0.85rem;
+}
+
+.metricTrend.positive {
+  color: #10b981;
+}
+
+.metricTrend.negative {
+  color: #ef4444;
+}
+
+.metricTrend.neutral {
+  color: #a0aec0;
 }
 
 .platformsList {
   display: flex;
-  gap: 0.5rem;
   flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .platform {
-  background: #e9ecef;
+  background: #3b82f6;
   padding: 0.25rem 0.75rem;
   border-radius: 16px;
   font-size: 0.8rem;
-  color: #495057;
-}
-
-/* Metrics section */
-.assistantMetrics {
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.assistantMetrics h4 {
-  margin: 0 0 1rem;
-  color: #333;
-  font-size: 1rem;
-}
-
-.metricsList {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.metric {
+  color: #fff;
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.metric span:first-child {
+.removePlatform {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.addPlatform {
+  background: #2d2d2d;
+  border: 1px dashed #4a4a4a;
+  color: #a0aec0;
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
   font-size: 0.8rem;
-  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.metricValue {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: #2196F3;
+.addPlatform:hover {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.timeRange {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timeRange input {
+  background: #1a1a1a;
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  padding: 0.75rem;
+  color: #fff;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.timeRange input:focus {
+  outline: none;
+  border-color: #10b981;
+}
+
+.timeRange span {
+  color: #a0aec0;
+  font-size: 0.9rem;
+}
+
+select {
+  background: #1a1a1a;
+  border: 1px solid #4a4a4a;
+  border-radius: 4px;
+  padding: 0.5rem;
+  color: #fff;
+  width: 100%;
+}
+
+.numberInput,
+.selectInput {
+  background: #1a1a1a;
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  padding: 0.75rem;
+  color: #fff;
+  font-size: 0.9rem;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.numberInput:focus,
+.selectInput:focus {
+  outline: none;
+  border-color: #10b981;
+}
+
+.numberInput::-webkit-inner-spin-button,
+.numberInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 } 

@@ -1,36 +1,49 @@
 import { useState } from "react";
 import styles from "./ReceptionDashboard.module.css";
+import { useReceptionStore } from "../../store/receptionStore";
 
 const ReceptionDashboard = () => {
-  const [cleanedRooms, setCleanedRooms] = useState([]);
+  const { 
+    cleaningRooms, 
+    problemRooms, 
+    cleanedRooms, 
+    financials,
+    toggleCleanRoom,
+    getUnconfirmedArrivals,
+    getDepartures,
+    confirmArrival
+  } = useReceptionStore();
 
-  const arrivals = [
-    { name: "Mihai Popescu", room: 102, time: "14:00" },
-    { name: "Andreea Ionescu", room: 210, time: "15:30" },
-  ];
+  const [selectedRooms, setSelectedRooms] = useState({});
+  const [expandedCard, setExpandedCard] = useState(null);
 
-  const departures = [
-    { name: "Ion Marinescu", room: 305, time: "11:00" },
-    { name: "Florin Georgescu", room: 412, time: "12:00" },
-  ];
+  const arrivals = getUnconfirmedArrivals();
+  const departures = getDepartures();
 
-  const cleaningRooms = [105, 203, 310];
-  const problems = [
-    { room: 312, issue: "Aer condiționat defect" },
-    { room: 401, issue: "Bec ars" },
-  ];
-
-  const financials = {
-    revenue: "2.350 RON",
-    lastSale: "1 apă, 2 cafele, 1 masă restaurant",
+  const handleRoomSelection = (reservationId, roomNumber) => {
+    setSelectedRooms(prev => ({
+      ...prev,
+      [reservationId]: prev[reservationId] 
+        ? prev[reservationId].includes(roomNumber)
+          ? prev[reservationId].filter(r => r !== roomNumber)
+          : [...prev[reservationId], roomNumber]
+        : [roomNumber]
+    }));
   };
 
-  const toggleCleanRoom = (room) => {
-    setCleanedRooms((prev) =>
-      prev.includes(room.toString())
-        ? prev.filter((r) => r !== room.toString())
-        : [...prev, room.toString()]
-    );
+  const handleConfirmArrival = (reservationId) => {
+    if (selectedRooms[reservationId]?.length > 0) {
+      confirmArrival(reservationId, selectedRooms[reservationId]);
+      setSelectedRooms(prev => {
+        const newState = { ...prev };
+        delete newState[reservationId];
+        return newState;
+      });
+    }
+  };
+
+  const toggleCard = (cardId) => {
+    setExpandedCard(expandedCard === cardId ? null : cardId);
   };
 
   return (
@@ -40,62 +53,131 @@ const ReceptionDashboard = () => {
       <div className={styles.grid}>
         {/* Sosiri */}
         <div className={styles.card}>
-          <h3>🛬 Sosiri azi</h3>
-          <ul>
-            {arrivals.map((guest, index) => (
-              <li key={index}>
-                <strong>{guest.name}</strong> - Camera {guest.room} (ora {guest.time})
-              </li>
-            ))}
-          </ul>
+          <button 
+            className={styles.cardButton}
+            onClick={() => toggleCard('arrivals')}
+          >
+            <h3>🛬 Sosiri azi</h3>
+            <span className={styles.cardCount}>{arrivals.length}</span>
+          </button>
+          {expandedCard === 'arrivals' && (
+            <ul>
+              {arrivals.map((guest) => (
+                <li key={guest.id} className={styles.arrivalItem}>
+                  <div>
+                    <strong>{guest.name}</strong>
+                    <div className={styles.roomsList}>
+                      {guest.rooms.map(room => (
+                        <div key={room.roomNumber} className={styles.roomCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={selectedRooms[guest.id]?.includes(room.roomNumber) || false}
+                            onChange={() => handleRoomSelection(guest.id, room.roomNumber)}
+                          />
+                          <span>Camera {room.roomNumber}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <button 
+                    className={styles.confirmButton}
+                    onClick={() => handleConfirmArrival(guest.id)}
+                    disabled={!selectedRooms[guest.id]?.length}
+                  >
+                    Confirmă Sosirea
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Plecări */}
         <div className={styles.card}>
-          <h3>🏃 Plecări azi</h3>
-          <ul>
-            {departures.map((guest, index) => (
-              <li key={index}>
-                <strong>{guest.name}</strong> - Camera {guest.room} (ora {guest.time})
-              </li>
-            ))}
-          </ul>
+          <button 
+            className={styles.cardButton}
+            onClick={() => toggleCard('departures')}
+          >
+            <h3>🏃 Plecări azi</h3>
+            <span className={styles.cardCount}>{departures.length}</span>
+          </button>
+          {expandedCard === 'departures' && (
+            <ul>
+              {departures.map((guest) => (
+                <li key={guest.id}>
+                  <strong>{guest.name}</strong>
+                  <div className={styles.roomsList}>
+                    {guest.rooms.map(room => (
+                      <div key={room.roomNumber}>
+                        Camera {room.roomNumber} (ora {room.checkOutTime})
+                      </div>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Curățenie */}
         <div className={styles.card}>
-          <h3>🧹 Curățenie finalizată</h3>
-          <ul>
-            {cleaningRooms.map((room) => (
-              <li key={room} className={styles.cleaningItem}>
-                <input
-                  type="checkbox"
-                  checked={cleanedRooms.includes(room.toString())}
-                  onChange={() => toggleCleanRoom(room)}
-                />
-                <span>Camera {room}</span>
-              </li>
-            ))}
-          </ul>
+          <button 
+            className={styles.cardButton}
+            onClick={() => toggleCard('cleaning')}
+          >
+            <h3>🧹 Curățenie finalizată</h3>
+            <span className={styles.cardCount}>{cleaningRooms.length}</span>
+          </button>
+          {expandedCard === 'cleaning' && (
+            <ul>
+              {cleaningRooms.map((room) => (
+                <li key={room} className={styles.cleaningItem}>
+                  <input
+                    type="checkbox"
+                    checked={cleanedRooms.includes(room)}
+                    onChange={() => toggleCleanRoom(room)}
+                  />
+                  <span>Camera {room}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Probleme */}
         <div className={styles.card}>
-          <h3>🚨 Probleme</h3>
-          <ul>
-            {problems.map((problem, index) => (
-              <li key={index}>
-                <strong>Camera {problem.room}:</strong> {problem.issue}
-              </li>
-            ))}
-          </ul>
+          <button 
+            className={styles.cardButton}
+            onClick={() => toggleCard('problems')}
+          >
+            <h3>🚨 Probleme</h3>
+            <span className={styles.cardCount}>{problemRooms.length}</span>
+          </button>
+          {expandedCard === 'problems' && (
+            <ul>
+              {problemRooms.map((problem, index) => (
+                <li key={index}>
+                  <strong>Camera {problem.room}:</strong> {problem.issue}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Finanțe */}
         <div className={styles.card}>
-          <h3>💰 Finanțe</h3>
-          <p><strong>Încasări azi:</strong> {financials.revenue}</p>
-          <p><strong>Ultima vânzare:</strong> {financials.lastSale}</p>
+          <button 
+            className={styles.cardButton}
+            onClick={() => toggleCard('financials')}
+          >
+            <h3>💰 Finanțe</h3>
+          </button>
+          {expandedCard === 'financials' && (
+            <div>
+              <p><strong>Încasări azi:</strong> {financials.revenue}</p>
+              <p><strong>Ultima vânzare:</strong> {financials.lastSale}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

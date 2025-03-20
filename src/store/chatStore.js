@@ -18,10 +18,19 @@ export const useChatStore = create((set, get) => ({
   // 🔹 Adăugăm mesaj în chat
   addMessage: (message) => set((state) => {
     // Generate a unique ID for the message if not provided
-    const messageWithId = {
+    let messageWithId = {
       ...message,
       id: message.id || uuidv4()
     };
+
+    // Handle automation messages
+    if (message.notification) {
+      messageWithId = {
+        ...messageWithId,
+        type: "automation",
+        notification: message.notification
+      };
+    }
     
     // Track user messages separately
     const newState = { messages: [...state.messages, messageWithId] };

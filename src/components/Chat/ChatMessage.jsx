@@ -9,16 +9,8 @@ import React from "react";
 import PropTypes from "prop-types";
 import styles from "./ChatMessage.module.css";
 import { IconExternalLink, IconX } from "@tabler/icons-react";
-
-/**
- * Message types enum for better type checking
- */
-export const MESSAGE_TYPES = {
-  USER: "user",
-  BOT: "bot",
-  NOTIFICATION: "notification",
-  ANALYSIS: "analysis"
-};
+import AutomationMessage from "./AutomationMessage";
+import { MESSAGE_TYPES } from "./constants";
 
 /**
  * Renders a single chat message
@@ -31,6 +23,7 @@ export const MESSAGE_TYPES = {
  * @param {string} [props.aiResponse] - Optional AI response suggestion
  * @param {boolean} [props.isCanceled] - Whether the reservation was canceled
  * @param {Function} [props.onShowDetails] - Callback for showing reservation details
+ * @param {Object} [props.notification] - Optional notification data
  * @returns {JSX.Element|null} The rendered message or null if no text
  */
 const ChatMessage = ({ 
@@ -40,8 +33,14 @@ const ChatMessage = ({
   link, 
   aiResponse, 
   isCanceled,
-  onShowDetails 
+  onShowDetails,
+  notification 
 }) => {
+  // Handle automation messages
+  if (type === MESSAGE_TYPES.AUTOMATION && notification) {
+    return <AutomationMessage notification={notification} />;
+  }
+
   if (!text) return null;
 
   // If there's a reservation and it's not canceled, show details immediately, but only once when mounted
@@ -103,7 +102,7 @@ const ChatMessage = ({
 
 // PropTypes for better documentation and validation
 ChatMessage.propTypes = {
-  text: PropTypes.string.isRequired,
+  text: PropTypes.string,
   type: PropTypes.oneOf(Object.values(MESSAGE_TYPES)).isRequired,
   reservation: PropTypes.object,
   link: PropTypes.shape({
@@ -112,7 +111,8 @@ ChatMessage.propTypes = {
   }),
   aiResponse: PropTypes.string,
   isCanceled: PropTypes.bool,
-  onShowDetails: PropTypes.func
+  onShowDetails: PropTypes.func,
+  notification: PropTypes.object
 };
 
 export default ChatMessage;
