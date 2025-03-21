@@ -1,40 +1,31 @@
-import React from 'react';
-import Navbar from './components/Navigation/Navbar';
-import Sidebar from './components/Navigation/Sidebar';
-import Dashboard from './views/Dashboard';
-import AssistantsView from './components/Assistants/AssistantsView';
-import ScheduleView from './components/Schedule/ScheduleView';
-import { useNavigationStore } from './store/navigationStore';
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Website from './pages/Website';
+import LoadingFallback from './components/LoadingFallback';
 import styles from './App.module.css';
-import HistoryView from './components/History/HistoryView';
 
-// Placeholder components for other menus
-const Restaurant = () => <div className={styles.pageContainer}>Pagina Restaurant</div>;
-const Reports = () => <div className={styles.pageContainer}>Pagina Rapoarte</div>;
-
-// Map menu IDs to components
-const menuComponents = {
-  dashboard: Dashboard,
-  assistants: AssistantsView,
-  schedule: ScheduleView,
-  history: HistoryView,
-  restaurant: Restaurant,
-  reports: Reports,
-};
+// Lazy load the Management component
+const Management = lazy(() => import('./pages/Management'));
 
 const App = () => {
-  const { activeMenu } = useNavigationStore();
-  const ActiveComponent = menuComponents[activeMenu];
-
   return (
-    <div className={styles.app}>
-      <Navbar />
-      <Sidebar />
-      <main className={styles.mainContent}>
-        <ActiveComponent />
-      </main>
-    </div>
+    <Router>
+      <div className={styles.app}>
+        <Routes>
+          <Route path="/" element={<Website />} />
+          <Route
+            path="/dashboard/*"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <Management />
+              </Suspense>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </Router>
   );
 };
 
-export default App;
+export default App; 
