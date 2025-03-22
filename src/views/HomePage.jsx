@@ -1,15 +1,16 @@
 import InvertedCard from "../components/Hero/InvertedCard";
 import LocationMap from "../components/LocationMap/LocationMap";
+import MarkdownContent from "../components/MarkdownContent";
 import styles from "./HomePage.module.css";
 
 function HomePage() {
 
-    const title = "Hotel Name";
-    const identifier = "Hotel Identifier";
-    const position = {
-        lat: 40.712776,
-        lng: -74.005974
-    }
+    const title = "Hotel Phoenix";
+    const identifier = "Bucuresti";
+    const position = [
+        40.712776,
+       -74.005974
+    ]
 
   return (
   <div className={styles.main}>
@@ -23,7 +24,7 @@ function HomePage() {
             <h3 className={styles.identifier}>{identifier}</h3>
           </div>
           <div className={styles.hotelDescription}>
-            Presentation
+            <MarkdownContent filePath="/content/hotel-description.md" />
           </div>
         </div>
         <div className={styles.map}>

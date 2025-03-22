@@ -1,0 +1,208 @@
+/* Auth Component Styles */
+.authContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  min-height: calc(100vh - 120px);
+}
+
+.authCard {
+  margin-block-start: 70px;
+  width: 100%;
+  max-width: 450px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+
+.authHeader h1 {
+  margin-bottom: 0.5rem;
+  color: #333;
+  font-size: 1.75rem;
+}
+
+.authHeader p {
+  color: #666;
+  font-size: 1rem;
+}
+
+.authTabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 1.5rem;
+}
+
+.authTab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.authTab:hover {
+  color: #0a66c2;
+}
+
+.activeTab {
+  color: #0a66c2;
+  border-bottom: 2px solid #0a66c2;
+}
+
+.authForm {
+  padding: 0 2rem 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #0a66c2;
+  box-shadow: 0 0 0 2px rgba(10, 102, 194, 0.2);
+}
+
+.forgotPassword {
+  text-align: right;
+  margin-bottom: 1.5rem;
+}
+
+.forgotPassword a {
+  color: #0a66c2;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.forgotPassword a:hover {
+  text-decoration: underline;
+}
+
+.authButton {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: #0a66c2;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.authButton:hover {
+  background-color: #0854a0;
+}
+
+.authButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.authDivider {
+  position: relative;
+  text-align: center;
+  margin: 1.5rem 0;
+  padding: 0 2rem;
+}
+
+.authDivider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 2rem;
+  right: 2rem;
+  height: 1px;
+  background-color: #e0e0e0;
+}
+
+.authDivider span {
+  position: relative;
+  background-color: #fff;
+  padding: 0 1rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.authAlternatives {
+  padding: 0 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.googleButton, .passkeyButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.8rem;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.googleButton:hover, .passkeyButton:hover {
+  background-color: #f5f5f5;
+  border-color: #bbb;
+}
+
+.googleButton:disabled, .passkeyButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.authFooter {
+  padding: 1.5rem 2rem;
+  text-align: center;
+  background-color: #f9f9f9;
+  border-top: 1px solid #e0e0e0;
+}
+
+.authFooter p {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.authToggle {
+  background: none;
+  border: none;
+  color: #0a66c2;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.authToggle:hover {
+  text-decoration: underline;
+} 

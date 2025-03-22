@@ -1,0 +1,92 @@
+.markdownContainer {
+  color: #333;
+  font-family: 'Arial', sans-serif;
+  animation: fadeIn 0.5s ease-in-out;
+  line-height: 0.8;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.markdownContainer h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.8rem;
+  color: #222;
+}
+
+.markdownContainer h2 {
+  font-size: 1.2rem;
+  margin-top: 1.2rem;
+  margin-bottom: 0.6rem;
+  color: #333;
+}
+
+.markdownContainer p {
+  margin-bottom: 0.7rem;
+  font-size: 0.95rem;
+}
+
+.markdownContainer ul {
+  margin-left: 1.2rem;
+  margin-bottom: 0.8rem;
+}
+
+.markdownContainer li {
+  margin-bottom: 0.4rem;
+}
+
+/* Stiluri pentru componentele personalizate */
+.heading1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.8rem;
+  color: #1a365d;
+  font-weight: 700;
+}
+
+.heading2 {
+  font-size: 1.2rem;
+  margin-top: 1.2rem;
+  margin-bottom: 0.6rem;
+  color: #2c5282;
+  font-weight: 600;
+}
+
+.paragraph {
+  margin-bottom: 0.7rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.loading {
+  padding: 0.8rem;
+  font-style: italic;
+  color: #666;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.error {
+  padding: 0.8rem;
+  color: #d32f2f;
+  border-left: 3px solid #d32f2f;
+  background-color: rgba(211, 47, 47, 0.1);
+} 

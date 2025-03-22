@@ -1,13 +1,13 @@
 import React from 'react';
-import HomePage from '../views/HomePage';
 import MainLayout from '../components/Layout/MainLayout';
 
-const Website = () => {
+const Rooms = () => {
   return (
     <MainLayout>
-      <HomePage />
+      <h1>Camere</h1>
+      <p>Aici veți găsi informații despre camerele noastre.</p>
     </MainLayout>
   );
 };
 
-export default Website; 
+export default Rooms; 
