@@ -1,0 +1,116 @@
+.calendar {
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+/* 📆 Week Days (Mon-Sun) */
+.weekDays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8px;
+}
+
+.weekDay {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: whitesmoke;
+}
+
+/* 📆 Grid Layout */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+/* 🏷️ Empty Boxes for Missing Days */
+.emptyDay {
+  width: 40px;
+  height: 40px;
+  visibility: hidden;
+}
+
+/* 📌 Day Box */
+.day {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  background: transparent;
+  transition: background 0.3s ease;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* 🔲 Outline for Today */
+.today {
+  outline: 4px solid #7a73d1;
+  outline-offset: 1px;
+}
+
+/* 🔴 Busy Day */
+.busy {
+  background: rgba(255, 87, 51, 0.7);
+}
+
+/* 🟠 Moderate Day */
+.moderate {
+  background: rgba(255, 193, 7, 0.7);
+}
+
+/* 🟢 Normal Day */
+.normal {
+  background: rgba(76, 175, 80, 0.7);
+}
+
+/* 🔵 Available Day */
+.available {
+  background: rgba(33, 150, 243, 0.7);
+}
+
+/* ⚫ Unavailable Day */
+.unavailable {
+  background: rgba(158, 158, 158, 0.7);
+}
+
+/* 📌 Footer Navigation */
+.footer {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  margin-top: 10px;
+  gap: 20px;
+}
+
+.footer h3 {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.footer button {
+  background: #00796b;
+  color: white;
+  display: flex;
+  align-items: center;
+  border: none;
+  padding: 5px 10px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.3s ease;
+}
+
+.footer button:hover {
+  background: #004d40;
+}
+
+.navigator{
+  display: flex;
+  gap: 10px;
+}

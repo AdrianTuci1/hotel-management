@@ -8,7 +8,7 @@ function InvertedCard () {
     return (
         <>
             <div className="container">
-                <img src="/democlinic.jpg" alt="" />
+                <img src="/Hotel-evening.jpg" alt="" />
                 <div className="overlay"></div>
                 <div className="m"></div>
                 <div className="logo-box">

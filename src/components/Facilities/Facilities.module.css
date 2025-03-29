@@ -1,0 +1,102 @@
+.facilitiesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 50px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.facilityCard {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+}
+
+.imageWrapper {
+  position: relative;
+  width: 40%;
+  min-width: 400px;
+  aspect-ratio: 4/3;
+}
+
+.facilityImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.facilityName {
+  color: white;
+  font-size: 2.5rem;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.content {
+  padding: 2rem;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.description {
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+@media (max-width: 1024px) {
+  .facilitiesContainer {
+    padding: 20px;
+  }
+
+  .facilityCard {
+    flex-direction: column;
+  }
+
+  .imageWrapper {
+    width: 100%;
+    min-width: unset;
+    aspect-ratio: 4/3;
+  }
+
+  .facilityName {
+    font-size: 2rem;
+  }
+
+  .content {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .facilityName {
+    font-size: 1.8rem;
+  }
+
+  .description {
+    font-size: 1rem;
+  }
+} 

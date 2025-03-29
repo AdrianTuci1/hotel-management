@@ -1,0 +1,49 @@
+.legend {
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.legendTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: black;
+}
+
+.legendItems {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.colorCube {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  font-size: 0.9rem;
+  color: black;
+}
+
+@media (max-width: 768px) {
+  .legend {
+    padding: 1rem;
+  }
+  
+  .legendTitle {
+    font-size: 1.1rem;
+  }
+  
+  .legendLabel {
+    font-size: 0.85rem;
+  }
+} 

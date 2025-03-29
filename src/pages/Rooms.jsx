@@ -1,13 +1,13 @@
 import React from 'react';
 import MainLayout from '../components/Layout/MainLayout';
+import Rooms from '../components/Rooms/Rooms';
 
-const Rooms = () => {
+const RoomsPage = () => {
   return (
     <MainLayout>
-      <h1>Camere</h1>
-      <p>Aici veți găsi informații despre camerele noastre.</p>
+      <Rooms />
     </MainLayout>
   );
 };
 
-export default Rooms; 
+export default RoomsPage; 

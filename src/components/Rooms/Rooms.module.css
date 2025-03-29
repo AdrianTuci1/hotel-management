@@ -1,0 +1,146 @@
+.roomsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 50px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.roomCard {
+  display: flex;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.roomCard:hover {
+  transform: translateY(-5px);
+}
+
+.imageSection {
+  position: relative;
+  width: 40%;
+  min-width: 400px;
+  aspect-ratio: 4/3;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.roomImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.contentSection {
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.roomName {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.roomDescription {
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.amenities {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.amenity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #444;
+}
+
+.amenityIcon {
+  font-size: 1.2rem;
+  color: #004aad;
+}
+
+.amenityName {
+  font-size: 0.9rem;
+}
+
+.priceButton {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background: #004aad;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: fit-content;
+}
+
+.priceButton:hover {
+  background: #003d8f;
+}
+
+@media (max-width: 1024px) {
+  .roomsContainer {
+    padding: 20px;
+  }
+
+  .roomCard {
+    flex-direction: column;
+    padding: 0.8rem;
+  }
+
+  .imageSection {
+    width: 100%;
+    min-width: unset;
+    aspect-ratio: 4/3;
+  }
+
+  .contentSection {
+    padding: 0.8rem;
+  }
+
+  .roomName {
+    font-size: 1.5rem;
+  }
+
+  .roomDescription {
+    font-size: 1rem;
+  }
+
+  .amenities {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .amenities {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .priceButton {
+    font-size: 1rem;
+    padding: 10px 20px;
+  }
+} 

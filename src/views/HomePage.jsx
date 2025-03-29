@@ -2,6 +2,11 @@ import InvertedCard from "../components/Hero/InvertedCard";
 import LocationMap from "../components/LocationMap/LocationMap";
 import MarkdownContent from "../components/MarkdownContent";
 import styles from "./HomePage.module.css";
+import Calendar from "../components/Calendar/Calendar";
+import SwipeableCarousel from "../components/SwipeableCarousel/SwipeableCarousel";
+import Footer from "../components/Footer/Footer";
+import Services from '../components/Services/Services';
+import Attractions from '../components/Attractions/Attractions';
 
 function HomePage() {
 
@@ -32,20 +37,25 @@ function HomePage() {
         </div>
       </section>
 
+      <Services />
+
       <section className={styles.services}>
-        <div className={styles.service}>
-          <h3>Service 1</h3>
-          <p>Description 1</p>
-        </div>
-        <div className={styles.service}>
-          <h3>Service 2</h3>
-          <p>Description 2</p>
+        <div className={styles.calendarSection}>
+          <div className={styles.calendar}>
+            <Calendar />
+          </div>
         </div>
       </section>
 
       <section className={styles.services}>
-        
+        <Attractions />
       </section>
+
+      <section className={styles.photos}>
+        <SwipeableCarousel />
+      </section>
+
+      <Footer />
   </div>
   );
 }
