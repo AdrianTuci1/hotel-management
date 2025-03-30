@@ -1,125 +1,342 @@
 .dashboard {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-    font-family: Arial, sans-serif;
-    background: #1e1e1e;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-    color: #e0e0e0;
-  }
-  
-  .title {
-    margin-bottom: 24px;
-    color: #2c3e50;
-  }
-  
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-  }
-  
-  .card {
-    background: #2b2b2b;
-    border-radius: 8px;
-    padding: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-  }
-  
-  .cardButton {
-    width: 100%;
-    background: none;
-    border: none;
-    padding: 20px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: #e0e0e0;
-    transition: background-color 0.2s;
-  }
-  
-  .cardButton:hover {
-    background: #363636;
-  }
-  
-  .cardButton h3 {
-    margin: 0;
-    font-size: 1.2rem;
-    color: #e0e0e0;
-  }
-  
-  .cardCount {
-    background: #4CAF50;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.9rem;
-  }
-  
-  .card ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    border-top: 1px solid #363636;
-  }
-  
-  .card li {
-    padding: 12px 20px;
-    border-bottom: 1px solid #363636;
-  }
-  
-  .card li:last-child {
-    border-bottom: none;
-  }
-  
-  .cleaningItem {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .arrivalItem {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    background: #363636;
-    border-radius: 6px;
-    margin: 8px 0;
-  }
-  
-  .roomsList {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 8px;
-  }
-  
-  .roomCheckbox {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .confirmButton {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.2s;
-    align-self: flex-start;
-  }
-  
-  .confirmButton:hover {
-    background: #45a049;
-  }
-  
-  .confirmButton:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
-  }
+  height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+  background: #1e1e1e;
+  color: #e0e0e0;
+  overflow: hidden;
+}
+
+.title {
+  margin-bottom: 24px;
+  color: #2c3e50;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  padding-bottom: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  flex: 1;
+}
+
+.card {
+  background: #2b2b2b;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardHeader {
+  background: none;
+  border: none;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #e0e0e0;
+}
+
+.cardHeader h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #e0e0e0;
+}
+
+.cardContent {
+  flex: 1;
+  overflow-y: auto;
+  border-top: 1px solid #363636;
+}
+
+.financesSection {
+  background: #2b2b2b;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #363636;
+}
+
+.financesTopRow {
+  display: flex;
+  gap: 8px;
+}
+
+.financeBox {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid #363636;
+  transition: all 0.2s ease;
+}
+
+.financeBox:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.financeIcon {
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.financeInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.financeLabel {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.financeValue {
+  font-size: 1rem;
+  color: #e0e0e0;
+  font-weight: 500;
+}
+
+.cardButton {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 20px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #e0e0e0;
+  transition: background-color 0.2s;
+}
+
+.cardButton:hover {
+  background: #363636;
+}
+
+.cardButton h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #e0e0e0;
+}
+
+.cardCount {
+  background: #4CAF50;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid #363636;
+}
+
+.card li {
+  padding: 12px 20px;
+  border-bottom: 1px solid #363636;
+}
+
+.card li:last-child {
+  border-bottom: none;
+}
+
+.cleaningItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.cleaningRoomInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cleaningStatus {
+  font-size: 0.9em;
+  color: #888;
+}
+
+.cleaningActions {
+  display: flex;
+  gap: 8px;
+}
+
+.markCleanButton {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.markCleanButton:hover {
+  background: #45a049;
+}
+
+.arrivalItem {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #363636;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+.roomsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.roomCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.departureRoom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: #363636;
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.markDirtyButton {
+  background: #ff9800;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.markDirtyButton:hover {
+  background: #f57c00;
+}
+
+.problemItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #363636;
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.problemActions {
+  display: flex;
+  gap: 8px;
+}
+
+.resolveButton {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.resolveButton:hover {
+  background: #388E3C;
+}
+
+.addProblemItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #363636;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.addProblemItem input {
+  background: #2b2b2b;
+  border: 1px solid #4a4a4a;
+  color: #e0e0e0;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.addProblemItem input:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.addProblemButton {
+  background: #2196F3;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.addProblemButton:hover {
+  background: #1976D2;
+}
+
+.confirmButton {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  align-self: flex-end;
+}
+
+.confirmButton:hover {
+  background: #388E3C;
+}
+
+.confirmButton:disabled {
+  background: #666;
+  cursor: not-allowed;
+}

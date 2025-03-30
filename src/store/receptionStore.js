@@ -2,16 +2,26 @@ import { create } from "zustand";
 import { useCalendarStore } from "./calendarStore";
 
 export const useReceptionStore = create((set, get) => ({
-  // Demo data until API is ready
-  cleaningRooms: [105, 203, 310],
-  problemRooms: [
-    { room: 312, issue: "Aer condiționat defect" },
-    { room: 401, issue: "Bec ars" },
-  ],
+  // Room statuses
+  roomStatuses: [],
+  cleaningRooms: [],
+  problemRooms: [],
   cleanedRooms: [],
   financials: {
     revenue: "2.350 RON",
     lastSale: "1 apă, 2 cafele, 1 masă restaurant",
+  },
+
+  // Initialize with some demo data
+  initializeDemoData: () => {
+    set({
+      cleaningRooms: [105, 203, 310],
+      problemRooms: [
+        { room: 312, issue: "Aer condiționat defect" },
+        { room: 401, issue: "Bec ars" },
+      ],
+      cleanedRooms: []
+    });
   },
 
   // Get unconfirmed reservations from calendar store
@@ -91,12 +101,49 @@ export const useReceptionStore = create((set, get) => ({
     useCalendarStore.getState().setReservations(updatedReservations);
   },
 
-  // Toggle room cleaning status
-  toggleCleanRoom: (roomNumber) => {
+  // Mark room as dirty (needs cleaning)
+  markRoomDirty: async (roomNumber) => {
+    set(state => {
+      // Check if room is already in cleaning list
+      if (state.cleaningRooms.includes(roomNumber)) {
+        return state;
+      }
+      
+      return {
+        cleaningRooms: [...state.cleaningRooms, roomNumber],
+        // Remove from cleaned rooms if it was there
+        cleanedRooms: state.cleanedRooms.filter(room => room !== roomNumber)
+      };
+    });
+  },
+
+  // Mark room as clean
+  markRoomClean: async (roomNumber) => {
     set(state => ({
-      cleanedRooms: state.cleanedRooms.includes(roomNumber)
-        ? state.cleanedRooms.filter(room => room !== roomNumber)
-        : [...state.cleanedRooms, roomNumber]
+      cleaningRooms: state.cleaningRooms.filter(room => room !== roomNumber),
+      cleanedRooms: [...state.cleanedRooms, roomNumber]
+    }));
+  },
+
+  // Report a problem with a room
+  reportRoomProblem: async (roomNumber, problem) => {
+    set(state => {
+      // Check if problem already exists for this room
+      const existingProblem = state.problemRooms.find(p => p.room === roomNumber);
+      if (existingProblem) {
+        return state; // Don't add duplicate problems
+      }
+      
+      return {
+        problemRooms: [...state.problemRooms, { room: roomNumber, issue: problem }]
+      };
+    });
+  },
+
+  // Resolve a room problem
+  resolveRoomProblem: async (roomNumber) => {
+    set(state => ({
+      problemRooms: state.problemRooms.filter(problem => problem.room !== roomNumber)
     }));
   },
 
