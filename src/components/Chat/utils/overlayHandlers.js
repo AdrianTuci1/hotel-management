@@ -6,7 +6,8 @@
  * notifications, and other interactive elements.
  */
 
-import apiService from "../../../api/apiService";
+import { createReservation, updateReservation, deleteReservation } from '../../../api/reservation.service';
+import { createRoom, updateRoom, deleteRoom } from '../../../api/room.service';
 
 /**
  * Handles showing reservation details in the overlay
@@ -121,8 +122,24 @@ export const handleOverlayAction = async (action, data, options) => {
 
   switch (action) {
     case 'updateReservation':
-      // Actualizează datele overlay-ului fără a-l închide
-      setOverlay(data);
+      try {
+        // Actualizează datele overlay-ului fără a-l închide
+        setOverlay(data);
+        
+        // Trimite actualizarea către server
+        await updateReservation(data.id, data);
+        
+        addMessage({
+          type: "ai",
+          text: "Rezervarea a fost actualizată cu succes."
+        });
+      } catch (error) {
+        console.error('Error updating reservation:', error);
+        addMessage({
+          type: "error",
+          text: "❌ A apărut o eroare la actualizarea rezervării!"
+        });
+      }
       break;
 
     case 'finalizeReservation':
@@ -135,7 +152,7 @@ export const handleOverlayAction = async (action, data, options) => {
           }))
         };
 
-        await apiService.createReservation(finalData);
+        await createReservation(finalData);
 
         if (selectedRooms[0]) {
           const room = selectedRooms[0];
@@ -164,19 +181,103 @@ export const handleOverlayAction = async (action, data, options) => {
 
     case 'deleteReservation':
       if (window.confirm("Sigur doriți să ștergeți această rezervare?")) {
-        // Restore the original message to the chat showing it was canceled
-        if (data.messageId) {
-          restoreMessage(data.messageId, true);
+        try {
+          await deleteReservation(data.id);
+          
+          // Restore the original message to the chat showing it was canceled
+          if (data.messageId) {
+            restoreMessage(data.messageId, true);
+          }
+          
+          addMessage({
+            type: "ai",
+            text: "Rezervarea a fost anulată cu succes."
+          });
+          
+          // Închide overlay-ul
+          closeOverlay();
+          resetRoomOptions();
+        } catch (error) {
+          console.error('Error deleting reservation:', error);
+          addMessage({
+            type: "error",
+            text: "❌ A apărut o eroare la ștergerea rezervării!"
+          });
         }
+      }
+      break;
+
+    case 'addRoom':
+      try {
+        const roomData = {
+          number: data.roomNumber,
+          type: data.roomType,
+          basePrice: parseFloat(data.price),
+          features: data.features || [],
+          status: data.availability ? 'available' : 'maintenance'
+        };
+
+        await createRoom(roomData);
         
         addMessage({
           type: "ai",
-          text: "Rezervarea a fost anulată."
+          text: `Camera ${data.roomNumber} a fost adăugată cu succes.`
         });
         
-        // Închide overlay-ul
         closeOverlay();
-        resetRoomOptions();
+      } catch (error) {
+        console.error('Error adding room:', error);
+        addMessage({
+          type: "error",
+          text: "❌ A apărut o eroare la adăugarea camerei!"
+        });
+      }
+      break;
+
+    case 'updateRoom':
+      try {
+        const roomData = {
+          type: data.roomType,
+          basePrice: parseFloat(data.price),
+          features: data.features || [],
+          status: data.availability ? 'available' : 'maintenance'
+        };
+
+        await updateRoom(data.roomNumber, roomData);
+        
+        addMessage({
+          type: "ai",
+          text: `Camera ${data.roomNumber} a fost actualizată cu succes.`
+        });
+        
+        closeOverlay();
+      } catch (error) {
+        console.error('Error updating room:', error);
+        addMessage({
+          type: "error",
+          text: "❌ A apărut o eroare la actualizarea camerei!"
+        });
+      }
+      break;
+
+    case 'deleteRoom':
+      if (window.confirm("Sigur doriți să ștergeți această cameră?")) {
+        try {
+          await deleteRoom(data.roomNumber);
+          
+          addMessage({
+            type: "ai",
+            text: `Camera ${data.roomNumber} a fost ștearsă cu succes.`
+          });
+          
+          closeOverlay();
+        } catch (error) {
+          console.error('Error deleting room:', error);
+          addMessage({
+            type: "error",
+            text: "❌ A apărut o eroare la ștergerea camerei!"
+          });
+        }
       }
       break;
 

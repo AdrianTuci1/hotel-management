@@ -29,6 +29,7 @@ const updateUIForIntent = (intent, setDisplayComponent) => {
   return false;
 };
 
+
 /**
  * Procesează mesajele de tip rezervare
  * 
@@ -42,6 +43,33 @@ const handleReservationIntent = (payload) => {
   if (payload.reservation) {
     // Deschidem formularul de rezervare
     showOverlay('reservation', payload.reservation);
+  }
+};
+
+/**
+ * Procesează mesajele de tip creare cameră
+ * 
+ * @param {Object} payload - Payload-ul mesajului
+ * @returns {void}
+ */
+const handleRoomIntent = (payload) => {
+  const { showOverlay } = useChatStore.getState();
+  
+  // Verificăm dacă avem date pentru cameră
+  if (payload.roomNumber || payload.room) {
+    // Construim obiectul pentru overlay
+    const roomData = {
+      room: {
+        number: payload.roomNumber || payload.room.number,
+        type: payload.roomType || payload.room.type,
+        price: payload.price || payload.room.price
+      }
+    };
+
+    console.log("🔍 [CHAT_HANDLER] Opening room management overlay with data:", roomData);
+    
+    // Deschidem formularul de gestionare cameră
+    showOverlay('room', roomData);
   }
 };
 
@@ -68,7 +96,9 @@ export const handleChatResponse = (payload, { addMessage, setDisplayComponent })
   // Definim cazuri speciale pentru anumite intenții
   const specialIntentHandlers = {
     [CHAT_INTENTS.RESERVATION]: () => handleReservationIntent(payload),
-    [CHAT_INTENTS.MODIFY_RESERVATION]: () => handleReservationIntent(payload)
+    [CHAT_INTENTS.MODIFY_RESERVATION]: () => handleReservationIntent(payload),
+    [CHAT_INTENTS.CREATE_ROOM]: () => handleRoomIntent(payload),
+    [CHAT_INTENTS.MODIFY_ROOM]: () => handleRoomIntent(payload)
   };
   
   // Extragem intent-ul

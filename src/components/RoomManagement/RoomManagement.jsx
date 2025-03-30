@@ -22,35 +22,42 @@ const RoomManagement = ({ room, onAction, onClose }) => {
   const isEditing = !!room?.id;
   
   const [roomFormData, setRoomFormData] = useState({
-    roomNumber: '',
-    roomType: 'standard',
+    number: '',
+    type: 'standard',
+    otherType: '',
     price: '',
-    capacity: 2,
-    features: [],
-    availability: true,
     // Spread room data if it exists
     ...(room || {})
   });
 
+  // Update form data when room prop changes
+  useEffect(() => {
+    if (room) {
+      setRoomFormData({
+        number: room.number || '',
+        type: room.type || 'standard',
+        otherType: '',
+        price: room.price || '',
+      });
+    }
+  }, [room]);
+
   // Handle input changes for room form
   const handleRoomInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    if (type === 'checkbox') {
-      setRoomFormData({ ...roomFormData, [name]: checked });
-    } else {
-      setRoomFormData({ ...roomFormData, [name]: value });
-    }
+    const { name, value } = e.target;
+    console.log('Input change:', name, value); // Debug log
+    setRoomFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle features selection for room form
-  const handleFeatureToggle = (feature) => {
-    const features = [...roomFormData.features];
-    if (features.includes(feature)) {
-      features.splice(features.indexOf(feature), 1);
-    } else {
-      features.push(feature);
-    }
-    setRoomFormData({ ...roomFormData, features });
+  const isOtherType = roomFormData.type === 'other';
+
+  const handleSubmit = () => {
+    console.log('Submitting form data:', roomFormData); // Debug log
+    onAction(isEditing ? 'updateRoom' : 'addRoom', {
+      number: roomFormData.number,
+      type: isOtherType ? roomFormData.otherType : roomFormData.type,
+      price: roomFormData.price
+    });
   };
 
   return (
@@ -61,31 +68,47 @@ const RoomManagement = ({ room, onAction, onClose }) => {
       </div>
       <div className={styles.roomForm}>
         <div className={styles.formGroup}>
-          <label htmlFor="roomNumber">Număr cameră</label>
+          <label htmlFor="number">Număr cameră</label>
           <input
             type="text"
-            id="roomNumber"
-            name="roomNumber"
-            value={roomFormData.roomNumber}
+            id="number"
+            name="number"
+            value={roomFormData.number}
             onChange={handleRoomInputChange}
             required
           />
         </div>
         
         <div className={styles.formGroup}>
-          <label htmlFor="roomType">Tip cameră</label>
+          <label htmlFor="type">Tip cameră</label>
           <select
-            id="roomType"
-            name="roomType"
-            value={roomFormData.roomType}
+            id="type"
+            name="type"
+            value={roomFormData.type}
             onChange={handleRoomInputChange}
           >
             <option value="standard">Standard</option>
             <option value="deluxe">Deluxe</option>
             <option value="suite">Suite</option>
             <option value="apartment">Apartament</option>
+            <option value="other">Alt tip</option>
           </select>
         </div>
+
+        {isOtherType && (
+          <div className={styles.formGroup}>
+            <label htmlFor="otherType">Specificați tipul camerei</label>
+            <input
+              type="text"
+              id="otherType"
+              name="otherType"
+              value={roomFormData.otherType}
+              onChange={handleRoomInputChange}
+              required
+              placeholder="Ex: Executive, Family Room, etc."
+            />
+          </div>
+        )}
         
         <div className={styles.formGroup}>
           <label htmlFor="price">Preț pe noapte (RON)</label>
@@ -98,57 +121,11 @@ const RoomManagement = ({ room, onAction, onClose }) => {
             required
           />
         </div>
-        
-        <div className={styles.formGroup}>
-          <label htmlFor="capacity">Capacitate (persoane)</label>
-          <input
-            type="number"
-            id="capacity"
-            name="capacity"
-            min="1"
-            max="10"
-            value={roomFormData.capacity}
-            onChange={handleRoomInputChange}
-          />
-        </div>
-        
-        <div className={styles.formGroup}>
-          <label>Facilități</label>
-          <div className={styles.featuresGrid}>
-            {['Wi-Fi', 'TV', 'Minibar', 'Balcon', 'Aer condiționat', 'Seif', 'Vedere la mare', 'Jacuzzi'].map(feature => (
-              <div key={feature} className={styles.featureItem}>
-                <input
-                  type="checkbox"
-                  id={`feature-${feature}`}
-                  checked={roomFormData.features.includes(feature)}
-                  onChange={() => handleFeatureToggle(feature)}
-                />
-                <label htmlFor={`feature-${feature}`}>{feature}</label>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className={styles.formGroup}>
-          <label htmlFor="availability">Disponibilitate</label>
-          <div className={styles.toggleSwitch}>
-            <input
-              type="checkbox"
-              id="availability"
-              name="availability"
-              checked={roomFormData.availability}
-              onChange={handleRoomInputChange}
-            />
-            <label htmlFor="availability">
-              {roomFormData.availability ? 'Disponibilă' : 'Indisponibilă'}
-            </label>
-          </div>
-        </div>
       </div>
       
       <div className={styles.actions}>
         <button
-          onClick={() => onAction(isEditing ? 'updateRoom' : 'addRoom', roomFormData)}
+          onClick={handleSubmit}
           className={styles.primaryButton}
         >
           {isEditing ? 'Salvează modificări' : 'Adaugă cameră'}
@@ -172,8 +149,8 @@ const RoomManagement = ({ room, onAction, onClose }) => {
 RoomManagement.propTypes = {
   room: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    roomNumber: PropTypes.string,
-    roomType: PropTypes.string,
+    number: PropTypes.string,
+    type: PropTypes.string,
     price: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
   }),
   onAction: PropTypes.func.isRequired,

@@ -21,7 +21,7 @@ export const OVERLAY_TYPES = {
   RESERVATION: 'reservation',
   NOTIFICATION: 'notification',
   ANALYSIS: 'analysis',
-  ROOM_MANAGEMENT: 'roomManagement',
+  ROOM_MANAGEMENT: 'room',
   ADD_PHONE: 'addPhone',
   PRODUCT_SALES: 'productSales'
 };
