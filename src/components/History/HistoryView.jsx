@@ -1,10 +1,22 @@
 import React, { useState } from 'react';
 import styles from './HistoryView.module.css';
+import HistoryList from './HistoryList/HistoryList';
+import TimeframeView from './TimeframeView/TimeframeView';
 
 const HistoryView = () => {
   const [search, setSearch] = useState('');
-  const [expanded, setExpanded] = useState(null);
   const [selectedDate, setSelectedDate] = useState('2025-03-19');
+  const [selectedTypes, setSelectedTypes] = useState([]);
+  const [timeRange, setTimeRange] = useState('all');
+  const [customRange, setCustomRange] = useState(null);
+
+  const toggleType = (type) => {
+    setSelectedTypes(prev => 
+      prev.includes(type) 
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
+  };
 
   const historyData = [
     {
@@ -13,6 +25,12 @@ const HistoryView = () => {
       title: 'Check-out camera 101',
       type: 'checkout',
       details: 'Camera 101 mutată în status murdar',
+      user: {
+        name: 'Ana Popescu',
+        role: 'Receptioner',
+        avatar: 'AP',
+        isAI: false
+      }
     },
     {
       id: 2,
@@ -20,6 +38,12 @@ const HistoryView = () => {
       title: 'Problemă raportată camera 202',
       type: 'problem',
       details: 'Aer condiționat defect',
+      user: {
+        name: 'AI Assistant',
+        role: 'AI',
+        avatar: '🤖',
+        isAI: true
+      }
     },
     {
       id: 3,
@@ -27,79 +51,153 @@ const HistoryView = () => {
       title: 'Curățenie camera 303',
       type: 'cleaning',
       details: 'Curățenie finalizată în 15 min',
+      user: {
+        name: 'Elena Popa',
+        role: 'Cameristă',
+        avatar: 'EP',
+        isAI: false
+      }
     },
-  ];
-
-  const toggleExpand = (id) => setExpanded(expanded === id ? null : id);
-
-  const getColorByType = (type) => {
-    switch (type) {
-      case 'checkout':
-        return styles.checkout;
-      case 'problem':
-        return styles.problem;
-      case 'cleaning':
-        return styles.cleaning;
-      default:
-        return styles.default;
+    {
+      id: 4,
+      timestamp: '2025-03-19 13:30',
+      title: 'Sugestie optimizare program',
+      type: 'suggestion',
+      details: 'Programul de curățenie poate fi optimizat pentru etajul 2',
+      user: {
+        name: 'AI Assistant',
+        role: 'AI',
+        avatar: '🤖',
+        isAI: true
+      }
+    },
+    {
+      id: 5,
+      timestamp: '2025-03-19 14:45',
+      title: 'Check-in camera 205',
+      type: 'checkout',
+      details: 'Clientul a sosit cu 2 ore înainte de check-in. Camera era disponibilă și a fost alocată imediat.',
+      user: {
+        name: 'Maria Ionescu',
+        role: 'Receptioner',
+        avatar: 'MI',
+        isAI: false
+      }
+    },
+    {
+      id: 6,
+      timestamp: '2025-03-19 15:20',
+      title: 'Solicitare servicii camera 402',
+      type: 'service',
+      details: 'Clientul a solicitat servicii de room service: 2 cafele și desert',
+      user: {
+        name: 'AI Assistant',
+        role: 'AI',
+        avatar: '🤖',
+        isAI: true
+      }
+    },
+    {
+      id: 7,
+      timestamp: '2025-03-19 16:00',
+      title: 'Mentenanță camera 202',
+      type: 'maintenance',
+      details: 'Aer condiționat reparat și testat. Funcționează normal.',
+      user: {
+        name: 'Ion Popa',
+        role: 'Tehnician',
+        avatar: 'IP',
+        isAI: false
+      }
+    },
+    {
+      id: 8,
+      timestamp: '2025-03-19 16:30',
+      title: 'Curățenie camera 101',
+      type: 'cleaning',
+      details: 'Curățenie completă finalizată. Toate lenjerii schimbate.',
+      user: {
+        name: 'Sofia Dumitrescu',
+        role: 'Cameristă',
+        avatar: 'SD',
+        isAI: false
+      }
+    },
+    {
+      id: 9,
+      timestamp: '2025-03-19 17:15',
+      title: 'Raport inventar',
+      type: 'report',
+      details: 'Inventarul zilnic finalizat. Toate articolele prezente și în stare bună.',
+      user: {
+        name: 'Alexandru Marin',
+        role: 'Manager',
+        avatar: 'AM',
+        isAI: false
+      }
+    },
+    {
+      id: 10,
+      timestamp: '2025-03-19 18:00',
+      title: 'Sugestie optimizare energie',
+      type: 'suggestion',
+      details: 'Consumul de energie poate fi redus cu 15% prin ajustarea programului de aer condiționat',
+      user: {
+        name: 'AI Assistant',
+        role: 'AI',
+        avatar: '🤖',
+        isAI: true
+      }
+    },
+    {
+      id: 11,
+      timestamp: '2025-03-19 19:30',
+      title: 'Check-in camera 505',
+      type: 'checkout',
+      details: 'Check-in finalizat. Documentele verificate și copiate.',
+      user: {
+        name: 'Ana Popescu',
+        role: 'Receptioner',
+        avatar: 'AP',
+        isAI: false
+      }
+    },
+    {
+      id: 12,
+      timestamp: '2025-03-19 20:15',
+      title: 'Solicitare asistență',
+      type: 'service',
+      details: 'Clientul din camera 303 a solicitat asistență pentru conectarea la WiFi',
+      user: {
+        name: 'AI Assistant',
+        role: 'AI',
+        avatar: '🤖',
+        isAI: true
+      }
     }
-  };
-
-  const filteredHistory = historyData.filter(
-    (item) =>
-      item.title.toLowerCase().includes(search.toLowerCase()) &&
-      item.timestamp.startsWith(selectedDate)
-  );
-
-  const resetToToday = () => setSelectedDate('2025-03-19');
+  ];
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h2>Istoric Acțiuni</h2>
-        <div className={styles.dateSelector}>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className={styles.dateInput}
-          />
-          <button onClick={resetToToday} className={styles.todayButton}>
-            Azi
-          </button>
-        </div>
-        <div className={styles.searchContainer}>
-          <input
-            className={styles.searchInput}
-            placeholder="Caută în istoric..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div className={styles.historyList}>
-          {filteredHistory.map((item) => (
-            <div
-              key={item.id}
-              className={`${styles.historyItem} ${getColorByType(item.type)}`}
-              onClick={() => toggleExpand(item.id)}
-            >
-              <div className={styles.historyTitle}>{item.title}</div>
-              <div className={styles.historyMeta}>
-                <span>{item.type.toUpperCase()}</span>
-                <span>{item.timestamp}</span>
-              </div>
-              {expanded === item.id && (
-                <div className={styles.historyDetails}>{item.details}</div>
-              )}
-            </div>
-          ))}
-
-          {filteredHistory.length === 0 && (
-            <div className={styles.noResults}>Niciun rezultat găsit.</div>
-          )}
-        </div>
-      </div>
+      <HistoryList
+        historyData={historyData}
+        search={search}
+        selectedDate={selectedDate}
+        selectedTypes={selectedTypes}
+        timeRange={timeRange}
+        customRange={customRange}
+      />
+      <TimeframeView
+        historyData={historyData}
+        selectedDate={selectedDate}
+        selectedTypes={selectedTypes}
+        timeRange={timeRange}
+        customRange={customRange}
+        onTimeRangeChange={setTimeRange}
+        onCustomRangeChange={setCustomRange}
+        onDateChange={setSelectedDate}
+        onTypeToggle={toggleType}
+      />
     </div>
   );
 };

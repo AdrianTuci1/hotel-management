@@ -1,0 +1,168 @@
+.historyList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  min-height: 0;
+}
+
+.historyList::-webkit-scrollbar {
+  width: 8px;
+}
+
+.historyList::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.historyList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.historyList::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.historyItem {
+  background-color: rgba(45, 45, 45, 0.8);
+  border-radius: 12px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.historyItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.historyContent {
+  display: grid;
+  grid-template-columns: 250px 1fr 150px;
+  gap: 2rem;
+  align-items: center;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-right: 1rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.historyInfo {
+  flex: 1;
+}
+
+.historyTitle {
+  font-size: 1.1rem;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.historyMeta {
+  display: flex;
+  gap: 1rem;
+  color: #a0a0a0;
+  font-size: 0.9rem;
+}
+
+.historyDetails {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e1e1e1;
+}
+
+.timestamp {
+  color: #a0a0a0;
+  font-size: 0.9rem;
+  text-align: right;
+  padding-left: 1rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(37, 99, 235, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  color: #60a5fa;
+  font-size: 1rem;
+}
+
+.aiAvatar {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  font-size: 1.2rem;
+}
+
+.userName {
+  color: #ffffff;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aiBadge {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.userRole {
+  color: #a0a0a0;
+  font-size: 0.9rem;
+}
+
+.checkout {
+  border-left: 4px solid #60a5fa;
+}
+
+.problem {
+  border-left: 4px solid #ef4444;
+}
+
+.cleaning {
+  border-left: 4px solid #10b981;
+}
+
+.suggestion {
+  border-left: 4px solid #f59e0b;
+}
+
+.default {
+  border-left: 4px solid #a0a0a0;
+}
+
+.service {
+  border-left: 4px solid #8b5cf6;
+}
+
+.maintenance {
+  border-left: 4px solid #f97316;
+}
+
+.report {
+  border-left: 4px solid #14b8a6;
+}
+
+.noResults {
+  text-align: center;
+  padding: 15px;
+  color: #888888;
+} 

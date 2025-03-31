@@ -4,6 +4,7 @@ import Sidebar from '../components/Navigation/Sidebar';
 import Dashboard from '../views/Dashboard';
 import AssistantsView from '../components/Assistants/AssistantsView';
 import ScheduleView from '../components/Schedule/ScheduleView';
+import AdminView from '../components/Admin/AdminView';
 import { useNavigationStore } from '../store/navigationStore';
 import styles from './Management.module.css';
 import HistoryView from '../components/History/HistoryView';
@@ -20,6 +21,7 @@ const menuComponents = {
   history: HistoryView,
   restaurant: Restaurant,
   reports: Reports,
+  admin: AdminView,
 };
 
 const Management = () => {

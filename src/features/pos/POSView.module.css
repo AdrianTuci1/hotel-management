@@ -1,9 +1,10 @@
 .posContainer {
   padding: 1rem;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  background-color: rgba(26, 26, 26, 0.95);
 }
 
 .posContainer h2 {

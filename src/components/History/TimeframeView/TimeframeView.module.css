@@ -1,0 +1,272 @@
+.timeframeContainer {
+  background-color: rgba(45, 45, 45, 0.8);
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.timeframeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.timeframeControls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.timeRangeSelector {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.timeRangeButton {
+  padding: 8px 15px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 5px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.timeRangeButton:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.timeRangeButton.active {
+  background-color: #3b82f6;
+}
+
+.dateControls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.dateInput {
+  padding: 8px 10px;
+  background-color: #1f1f1f;
+  border: none;
+  border-radius: 5px;
+  color: #ffffff;
+}
+
+.todayButton {
+  padding: 8px 15px;
+  background-color: #3b82f6;
+  border: none;
+  border-radius: 5px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.todayButton:hover {
+  background-color: #2563eb;
+}
+
+.timeframeLegend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #a0a0a0;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.legendItem:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.legendItem.selected {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #ffffff;
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.timeframeView {
+  position: relative;
+  height: 100px;
+  background-color: rgba(30, 30, 30, 0.5);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: ew-resize;
+}
+
+.timeAxis {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.timeAxisLine {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.timeAxisLine.halfHour {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.timeAxisLine.quarterHour {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.timeline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 10px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: default;
+  z-index: 1;
+}
+
+.timelineHour {
+  font-size: 0.8rem;
+  color: #a0a0a0;
+}
+
+.timelineEvents {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+.timelineEvent {
+  position: absolute;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.timelineEvent:hover {
+  transform: scaleY(1.5);
+  z-index: 3;
+}
+
+.timeRangeMarkers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.timeRangeMarker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.timeRangeMarker.active {
+  background-color: #3b82f6;
+  width: 3px;
+}
+
+.dragSelection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background-color: rgba(59, 130, 246, 0.2);
+  border: 2px solid #3b82f6;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.customRange {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 2px solid #3b82f6;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.resetButton {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.resetButton:hover {
+  background-color: rgba(239, 68, 68, 0.3);
+}
+
+.checkout {
+  background-color: #60a5fa;
+}
+
+.problem {
+  background-color: #ef4444;
+}
+
+.cleaning {
+  background-color: #10b981;
+}
+
+.suggestion {
+  background-color: #f59e0b;
+}
+
+.service {
+  background-color: #8b5cf6;
+}
+
+.maintenance {
+  background-color: #f97316;
+}
+
+.report {
+  background-color: #14b8a6;
+}
+
+.default {
+  background-color: #a0a0a0;
+} 

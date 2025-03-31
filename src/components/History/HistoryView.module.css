@@ -1,13 +1,15 @@
 .container {
     background-color: #121212;
-    min-height: 100vh;
+    height: calc(100vh - 60px);
     color: #e0e0e0;
-    padding: 20px;
     font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
   }
   
   .header {
-    margin-bottom: 20px;
+    flex-shrink: 0;
   }
   
   .header h2 {
@@ -59,62 +61,354 @@
   }
   
   .historyList {
+    flex: 1;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    padding: 20px;
+    min-height: 0;
+  }
+  
+  .historyList::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .historyList::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+  
+  .historyList::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+  
+  .historyList::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
   
   .historyItem {
-    background-color: #1f1f1f;
-    padding: 12px;
-    border-radius: 5px;
+    background-color: rgba(45, 45, 45, 0.8);
+    border-radius: 12px;
+    padding: 1.5rem;
     cursor: pointer;
-    transition: background-color 0.2s ease;
-    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   .historyItem:hover {
-    background-color: #292929;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .historyContent {
+    display: grid;
+    grid-template-columns: 250px 1fr 150px;
+    gap: 2rem;
+    align-items: center;
+  }
+  
+  .userInfo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-right: 1rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .historyInfo {
+    flex: 1;
   }
   
   .historyTitle {
-    font-size: 16px;
+    font-size: 1.1rem;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
     font-weight: 500;
-    margin-bottom: 6px;
   }
   
   .historyMeta {
     display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: #888888;
-    margin-bottom: 6px;
+    gap: 1rem;
+    color: #a0a0a0;
+    font-size: 0.9rem;
   }
   
   .historyDetails {
-    font-size: 14px;
-    color: #bbbbbb;
-    margin-top: 8px;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e1e1e1;
+  }
+  
+  .timestamp {
+    color: #a0a0a0;
+    font-size: 0.9rem;
+    text-align: right;
+    padding-left: 1rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(37, 99, 235, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    color: #60a5fa;
+    font-size: 1rem;
+  }
+  
+  .aiAvatar {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    font-size: 1.2rem;
+  }
+  
+  .userName {
+    color: #ffffff;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .aiBadge {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  
+  .userRole {
+    color: #a0a0a0;
+    font-size: 0.9rem;
   }
   
   .checkout {
-    border-color: #3b82f6; /* blue */
+    border-left: 4px solid #60a5fa;
   }
   
   .problem {
-    border-color: #ef4444; /* red */
+    border-left: 4px solid #ef4444;
   }
   
   .cleaning {
-    border-color: #22c55e; /* green */
+    border-left: 4px solid #10b981;
+  }
+  
+  .suggestion {
+    border-left: 4px solid #f59e0b;
   }
   
   .default {
-    border-color: #666666; /* gray */
+    border-left: 4px solid #a0a0a0;
+  }
+  
+  .service {
+    border-left: 4px solid #8b5cf6;
+  }
+  
+  .maintenance {
+    border-left: 4px solid #f97316;
+  }
+  
+  .report {
+    border-left: 4px solid #14b8a6;
   }
   
   .noResults {
     text-align: center;
     padding: 15px;
     color: #888888;
+  }
+  
+  .timeframeContainer {
+    background-color: rgba(45, 45, 45, 0.8);
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .timeframeHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .timeframeControls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .timeRangeSelector {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .timeRangeButton {
+    padding: 8px 15px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 5px;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+  }
+  
+  .timeRangeButton:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+  
+  .timeRangeButton.active {
+    background-color: #3b82f6;
+  }
+  
+  .dateControls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .timeframeLegend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+  }
+  
+  .legendItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #a0a0a0;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .legendItem:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .legendItem.selected {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #ffffff;
+  }
+  
+  .timeRangeMarkers {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+  }
+  
+  .timeRangeMarker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    border-radius: 2px;
+  }
+  
+  .timeRangeMarker.active {
+    background-color: #3b82f6;
+    width: 6px;
+  }
+  
+  .dragSelection {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(59, 130, 246, 0.2);
+    border: 2px solid #3b82f6;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .customRange {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(59, 130, 246, 0.1);
+    border: 2px solid #3b82f6;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .resetButton {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+  }
+  
+  .resetButton:hover {
+    background-color: rgba(239, 68, 68, 0.3);
+  }
+  
+  .timeframeView {
+    position: relative;
+    height: 100px;
+    background-color: rgba(30, 30, 30, 0.5);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: ew-resize;
+  }
+  
+  .timeline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: default;
+  }
+  
+  .timelineHour {
+    font-size: 0.8rem;
+    color: #a0a0a0;
+  }
+  
+  .timelineEvents {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+  }
+  
+  .timelineEvent {
+    position: absolute;
+    height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 10px;
+  }
+  
+  .timelineEvent:hover {
+    transform: scaleY(1.5);
+    z-index: 1;
   }

@@ -24,14 +24,9 @@ const menuItems = [
     icon: '📋',
   },
   {
-    id: 'restaurant',
-    label: 'Restaurant',
-    icon: '🍽️',
-  },
-  {
-    id: 'reports',
-    label: 'Rapoarte',
-    icon: '📈',
+    id: 'admin',
+    label: 'Administrare',
+    icon: '⚙️',
   },
 ];
 
