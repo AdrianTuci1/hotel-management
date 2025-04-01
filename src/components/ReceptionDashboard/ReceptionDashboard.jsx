@@ -78,7 +78,6 @@ const ReceptionDashboard = () => {
 
   return (
     <div className={styles.dashboard}>
-      <h2 className={styles.title}>📋 Rezumat Zilnic</h2>
 
       <div className={styles.mainContent}>
         <div className={styles.grid}>

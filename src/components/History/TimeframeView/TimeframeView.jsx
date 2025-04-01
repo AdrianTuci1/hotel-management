@@ -17,13 +17,6 @@ const TimeframeView = ({
   const [dragEnd, setDragEnd] = React.useState(null);
   const timelineRef = useRef(null);
 
-  const timeRanges = [
-    { id: 'all', label: 'Toată ziua' },
-    { id: 'morning', label: 'Dimineața (6-12)' },
-    { id: 'afternoon', label: 'După-amiaza (12-18)' },
-    { id: 'evening', label: 'Seara (18-24)' }
-  ];
-
   const handleMouseDown = (e) => {
     if (e.target.closest(`.${styles.timeline}`)) return;
     setIsDragging(true);
@@ -77,13 +70,6 @@ const TimeframeView = ({
       default:
         return styles.default;
     }
-  };
-
-  const getTimeRangeLabel = (hour) => {
-    if (hour >= 6 && hour < 12) return 'morning';
-    if (hour >= 12 && hour < 18) return 'afternoon';
-    if (hour >= 18) return 'evening';
-    return 'evening'; // pentru orele 0-6
   };
 
   const renderTimeAxis = () => {
@@ -144,12 +130,9 @@ const TimeframeView = ({
 
   const filteredEvents = historyData.filter(item => {
     const hour = parseInt(item.timestamp.split(' ')[1].split(':')[0]);
-    const itemTimeRange = getTimeRangeLabel(hour);
-    
     const matchesDate = item.timestamp.startsWith(selectedDate);
     const matchesTimeRange = timeRange === 'all' || 
-                            (timeRange === 'custom' && hour >= customRange.start && hour <= customRange.end) ||
-                            itemTimeRange === timeRange;
+                            (timeRange === 'custom' && hour >= customRange.start && hour <= customRange.end);
     const matchesType = selectedTypes.length === 0 || selectedTypes.includes(item.type);
 
     return matchesDate && matchesTimeRange && matchesType;
@@ -168,25 +151,6 @@ const TimeframeView = ({
     <div className={styles.timeframeContainer}>
       <div className={styles.timeframeHeader}>
         <div className={styles.timeframeControls}>
-          <div className={styles.timeRangeSelector}>
-            {timeRanges.map(range => (
-              <button
-                key={range.id}
-                className={`${styles.timeRangeButton} ${timeRange === range.id ? styles.active : ''}`}
-                onClick={() => onTimeRangeChange(range.id)}
-              >
-                {range.label}
-              </button>
-            ))}
-            {customRange && (
-              <button
-                className={`${styles.timeRangeButton} ${styles.resetButton}`}
-                onClick={resetTimeRange}
-              >
-                Resetare
-              </button>
-            )}
-          </div>
           <div className={styles.dateControls}>
             <input
               type="date"
@@ -197,6 +161,14 @@ const TimeframeView = ({
             <button onClick={() => onDateChange('2025-03-19')} className={styles.todayButton}>
               Azi
             </button>
+            {customRange && (
+              <button
+                className={`${styles.timeRangeButton} ${styles.resetButton}`}
+                onClick={resetTimeRange}
+              >
+                Resetare
+              </button>
+            )}
           </div>
         </div>
         <div className={styles.timeframeLegend}>
@@ -248,19 +220,6 @@ const TimeframeView = ({
               />
             );
           })}
-        </div>
-        <div className={styles.timeRangeMarkers}>
-          {timeRanges.map(range => (
-            <div
-              key={range.id}
-              className={`${styles.timeRangeMarker} ${timeRange === range.id ? styles.active : ''}`}
-              style={{
-                left: range.id === 'morning' ? '25%' :
-                       range.id === 'afternoon' ? '50%' :
-                       range.id === 'evening' ? '75%' : '0%'
-              }}
-            />
-          ))}
         </div>
         {isDragging && (
           <div 
