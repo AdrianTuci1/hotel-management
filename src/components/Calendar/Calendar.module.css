@@ -1,3 +1,19 @@
+.calendarContainer {
+  background: #1a1a1a;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  width: 100%;
+  max-width: 400px;
+  height: 340px;
+}
+
+.months {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .calendar {
   border-radius: 12px;
   padding: 20px;
@@ -14,7 +30,7 @@
 .weekDay {
   font-size: 0.9rem;
   font-weight: bold;
-  color: whitesmoke;
+  color: #888;
 }
 
 /* 📆 Grid Layout */
@@ -36,7 +52,7 @@
   width: 40px;
   height: 40px;
   position: relative;
-  background: transparent;
+  background: #2a2a2a;
   transition: background 0.3s ease;
   border-radius: 6px;
   cursor: pointer;
@@ -46,6 +62,10 @@
   font-size: 1rem;
   font-weight: bold;
   color: #fff;
+}
+
+.day:hover {
+  background: #3a3a3a;
 }
 
 /* 🔲 Outline for Today */
@@ -76,7 +96,8 @@
 
 /* ⚫ Unavailable Day */
 .unavailable {
-  background: rgba(158, 158, 158, 0.7);
+  background: rgba(158, 158, 158, 0.3);
+  cursor: not-allowed;
 }
 
 /* 📌 Footer Navigation */
@@ -91,11 +112,12 @@
 .footer h3 {
   font-size: 1rem;
   font-weight: bold;
+  color: #fff;
 }
 
 .footer button {
-  background: #00796b;
-  color: white;
+  background: #2a2a2a;
+  color: #fff;
   display: flex;
   align-items: center;
   border: none;
@@ -107,10 +129,23 @@
 }
 
 .footer button:hover {
-  background: #004d40;
+  background: #3a3a3a;
 }
 
-.navigator{
+.navigator {
   display: flex;
   gap: 10px;
+}
+
+/* Range Selection Styles */
+.selected {
+  background: rgba(76, 175, 80, 0.9) !important;
+}
+
+.inRange {
+  background: rgba(76, 175, 80, 0.5) !important;
+}
+
+.hovered {
+  background: rgba(76, 175, 80, 0.3) !important;
 }

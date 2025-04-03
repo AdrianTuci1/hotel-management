@@ -2,11 +2,12 @@ import InvertedCard from "../components/Hero/InvertedCard";
 import LocationMap from "../components/LocationMap/LocationMap";
 import MarkdownContent from "../components/MarkdownContent";
 import styles from "./HomePage.module.css";
-import Calendar from "../components/Calendar/Calendar";
 import SwipeableCarousel from "../components/SwipeableCarousel/SwipeableCarousel";
 import Footer from "../components/Footer/Footer";
 import Services from '../components/Services/Services';
 import Attractions from '../components/Attractions/Attractions';
+import RoomSelection from '../components/RoomSelection/RoomSelection';
+import Calendar from "../components/Calendar/Calendar";
 
 function HomePage() {
 
@@ -45,6 +46,7 @@ function HomePage() {
             <Calendar />
           </div>
         </div>
+        <RoomSelection />
       </section>
 
       <section className={styles.services}>
