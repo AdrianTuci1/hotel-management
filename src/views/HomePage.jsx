@@ -41,11 +41,6 @@ function HomePage() {
       <Services />
 
       <section className={styles.services}>
-        <div className={styles.calendarSection}>
-          <div className={styles.calendar}>
-            <Calendar />
-          </div>
-        </div>
         <RoomSelection />
       </section>
 
