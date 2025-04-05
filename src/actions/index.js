@@ -8,7 +8,9 @@
 export { 
   initializeChat, 
   handleChatMessage, 
-  testReservationFlow 
+  testReservationFlow,
+  sendAutomationAction,
+  sendReservationAction
 } from './chatActions';
 
 // Exportăm acțiunile de automatizare
