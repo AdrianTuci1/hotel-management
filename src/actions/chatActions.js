@@ -4,37 +4,21 @@
  * Acest modul coordonează comunicarea între:
  * - Interfața utilizator (UI)
  * - WebSocket Worker (canal de comunicare cu backend-ul)
- * - Handlere pentru procesarea răspunsurilor
+ * - Middleware pentru procesarea și rutarea mesajelor
  * 
  * Fluxul de date:
  * 1. UI trimite mesaj text către chatActions (handleChatMessage)
  * 2. chatActions formatează și trimite mesajul către WebSocketWorker
- * 3. WebSocketWorker primește răspunsul și îl trimite înapoi la chatActions
- * 4. chatActions normalizează tipul mesajului și îl direcționează către handlerul potrivit
- * 5. Handlerul actualizează UI-ul și starea aplicației
+ * 3. WebSocketWorker primește răspunsul și îl trimite înapoi la middleware
+ * 4. Middleware-ul procesează mesajul și actualizează store-urile specifice
  */
 
 import { useChatStore } from "../store/chatStore";
-import { useCalendarStore } from "../store/calendarStore";
-import { 
-  normalizeMessageType, 
-  parseChatMessage, 
-  parseReservationAction, 
-  parseAutomationAction, 
-  parseStatusMessage 
-} from './socket/messageParser';
-import { 
-  handleChatResponse, 
-  handleReservationsUpdate, 
-  handleNotification, 
-  handleConnectionStatus 
-} from './handlers';
+import useMiddlewareStore from "../store/middleware";
 import { 
   initializeWorker, 
-  getWorker, 
-  sendMessage 
+  getWorker
 } from './socket/worker';
-import { INCOMING_MESSAGE_TYPES } from './types';
 
 /**
  * Inițializează sistemul de chat și configurează handlerii de mesaje
@@ -42,7 +26,7 @@ import { INCOMING_MESSAGE_TYPES } from './types';
  * Această funcție:
  * 1. Conectează la serverul WebSocket prin intermediul unui worker
  * 2. Configurează handler-ul pentru mesajele primite
- * 3. Normalizează și direcționează mesajele către handlerele potrivite
+ * 3. Direcționează mesajele către middleware-ul central
  * 
  * @returns {Promise<void>}
  */
@@ -57,78 +41,15 @@ export const initializeChat = async () => {
     return;
   }
 
+  // Configurăm handler-ul pentru mesajele primite de la worker
   worker.onmessage = (event) => {
-    console.group("📩 [CHAT_ACTIONS] Message received from worker");
-    
     if (!event || !event.data) {
       console.error("❌ [CHAT_ACTIONS] Invalid event received from worker");
-      console.groupEnd();
       return;
     }
     
-    // Extract type and payload
-    const { type: rawType, payload } = event.data;
-    
-    if (!payload) {
-      console.error("❌ [CHAT_ACTIONS] Invalid payload received from worker");
-      console.groupEnd();
-      return;
-    }
-    
-    console.log("Message type:", rawType);
-    console.log("Payload:", payload);
-    
-    // Normalize the message type
-    const messageType = normalizeMessageType(rawType);
-    console.log("Normalized message type:", messageType);
-    
-    // Get store actions
-    const { addMessage, setDisplayComponent } = useChatStore.getState();
-    const { setReservations } = useCalendarStore.getState();
-    
-    // Process based on message type
-    switch (messageType) {
-      case INCOMING_MESSAGE_TYPES.CHAT_MESSAGE:
-        // Parsăm și normalizăm mesajul
-        const normalizedChatMessage = parseChatMessage(payload);
-        console.log("Normalized chat message:", normalizedChatMessage);
-        
-        // Trimitem la handler
-        handleChatResponse(normalizedChatMessage, { addMessage, setDisplayComponent });
-        break;
-
-      case INCOMING_MESSAGE_TYPES.RESERVATION_ACTION:
-        // Parsăm și normalizăm mesajul
-        const normalizedReservationMessage = parseReservationAction(payload);
-        console.log("Normalized reservation message:", normalizedReservationMessage);
-        
-        // Trimitem la handler
-        handleReservationsUpdate(normalizedReservationMessage, { setReservations });
-        break;
-
-      case INCOMING_MESSAGE_TYPES.AUTOMATION_ACTION:
-        // Parsăm și normalizăm mesajul
-        const normalizedAutomationMessage = parseAutomationAction(payload);
-        console.log("Normalized automation message:", normalizedAutomationMessage);
-        
-        // Trimitem la handler
-        handleNotification(normalizedAutomationMessage);
-        break;
-
-      case INCOMING_MESSAGE_TYPES.STATUS:
-        // Parsăm și normalizăm mesajul
-        const normalizedStatusMessage = parseStatusMessage(payload);
-        console.log("Normalized status message:", normalizedStatusMessage);
-        
-        // Trimitem la handler
-        handleConnectionStatus(normalizedStatusMessage);
-        break;
-
-      default:
-        console.warn("⚠️ [CHAT_ACTIONS] Unknown message type:", messageType);
-    }
-    
-    console.groupEnd();
+    // Procesăm mesajul prin middleware
+    useMiddlewareStore.getState().processMessage(event);
   };
   
   console.log("✅ [CHAT_ACTIONS] Chat system initialized successfully");
@@ -171,7 +92,8 @@ export const handleChatMessage = async (message) => {
       content: message
     };
     
-    const result = sendMessage(formattedMessage);
+    // Utilizăm middleware pentru a trimite mesajul
+    const result = useMiddlewareStore.getState().sendMessage(formattedMessage, worker);
     
     if (!result) {
       throw new Error("Web Worker is not available");
@@ -193,142 +115,36 @@ export const handleChatMessage = async (message) => {
 };
 
 /**
- * Verifică email-urile noi de la Booking.com
+ * Trimite o acțiune de automatizare către server
  * 
- * Declanșează o acțiune automată de verificare a email-urilor noi
- * Răspunsul va veni ca un mesaj AUTOMATION_ACTION
- * 
- * @returns {void}
+ * @param {string} action - Acțiunea de automatizare
+ * @returns {boolean} true dacă acțiunea a fost trimisă, false în caz contrar
  */
-export const checkBookingEmails = () => {
-  console.log("📨 [CHAT_ACTIONS] Checking Booking.com emails...");
+export const sendAutomationAction = (action) => {
   const worker = getWorker();
-  if (worker) {
-    // Formatăm acțiunea de automatizare conform protocolului
-    worker.postMessage({
-      type: "automation_action",
-      payload: "BOOKING_EMAIL"
-    });
-  } else {
-    console.warn("⚠️ [CHAT_ACTIONS] Worker is not available for checking emails");
+  
+  if (!worker) {
+    console.error("❌ [CHAT_ACTIONS] Worker not available for automation action");
+    return false;
   }
+  
+  return useMiddlewareStore.getState().sendAutomationAction(action, worker);
 };
 
 /**
- * Verifică mesajele noi de pe WhatsApp
+ * Trimite o acțiune de rezervare către server
  * 
- * Declanșează o acțiune automată de verificare a mesajelor WhatsApp
- * Răspunsul va veni ca un mesaj AUTOMATION_ACTION
- * 
- * @returns {void}
+ * @param {string} action - Tipul acțiunii (ex: "create", "update", "delete")
+ * @param {Object} data - Datele asociate acțiunii
+ * @returns {boolean} true dacă acțiunea a fost trimisă, false în caz contrar
  */
-export const checkWhatsAppMessages = () => {
-  console.log("📱 [CHAT_ACTIONS] Checking WhatsApp messages...");
+export const sendReservationAction = (action, data) => {
   const worker = getWorker();
-  if (worker) {
-    // Formatăm acțiunea de automatizare conform protocolului
-    worker.postMessage({
-      type: "automation_action",
-      payload: "WHATSAPP_MESSAGE"
-    });
-  } else {
-    console.warn("⚠️ [CHAT_ACTIONS] Worker is not available for checking WhatsApp");
+  
+  if (!worker) {
+    console.error("❌ [CHAT_ACTIONS] Worker not available for reservation action");
+    return false;
   }
-};
-
-/**
- * Declanșează analiza prețurilor
- * 
- * Declanșează o acțiune automată de analiză a prețurilor
- * Răspunsul va veni ca un mesaj AUTOMATION_ACTION
- * 
- * @returns {void}
- */
-export const analyzePrices = () => {
-  console.log("📊 [CHAT_ACTIONS] Analyzing prices...");
-  const worker = getWorker();
-  if (worker) {
-    // Formatăm acțiunea de automatizare conform protocolului
-    worker.postMessage({
-      type: "automation_action",
-      payload: "PRICE_ANALYSIS"
-    });
-  } else {
-    console.warn("⚠️ [CHAT_ACTIONS] Worker is not available for price analysis");
-  }
-};
-
-/**
- * Testează fluxul de procesare a unui mesaj de rezervare
- * 
- * Această funcție este pentru debugging și poate fi apelată manual
- * din consolă pentru a simula primirea unui mesaj de rezervare.
- * 
- * @example
- * // Import funcția pentru test
- * import { testReservationFlow } from './path/to/chatActions';
- * 
- * // Apelează funcția
- * testReservationFlow();
- * 
- * @param {Object} customData - Opțional, date de test personalizate
- * @returns {void}
- */
-export const testReservationFlow = (customData = null) => {
-  console.group("🧪 [TEST] Simulăm procesare eveniment de rezervare");
   
-  // Date de test, exact ca în exemplul utilizatorului
-  const testEvent = customData || {
-    type: 'CHAT_MESSAGE', 
-    payload: {
-      extraIntents: ['show_calendar'],
-      intent: "reservation",
-      message: "Se deschide formularul pentru o rezervare nouă pentru Ana de la 2025-03-17 până la 2025-03-18",
-      reservation: {
-        fullName: 'Ana', 
-        roomType: 'twin', 
-        startDate: '2025-03-17', 
-        endDate: '2025-03-18'
-      },
-      type: "info"
-    }
-  };
-  
-  console.log("📩 Date de test:", testEvent);
-  
-  // Simulăm cum ar fi primit mesajul de la WebSocket Worker
-  const { type: rawType, payload } = testEvent;
-  const messageType = normalizeMessageType(rawType);
-  
-  console.log("Tip mesaj normalizat:", messageType);
-  
-  if (messageType === INCOMING_MESSAGE_TYPES.CHAT_MESSAGE) {
-    console.log("Tratăm ca CHAT_MESSAGE");
-    
-    // Parsăm și normalizăm mesajul
-    const normalizedMessage = parseChatMessage(payload);
-    
-    // Apelăm handleChatResponse pentru a trata mesajul
-    handleChatResponse(normalizedMessage, {
-      addMessage: useChatStore.getState().addMessage,
-      setDisplayComponent: useChatStore.getState().setDisplayComponent
-    });
-    
-    // Verificăm starea overlay-ului
-    setTimeout(() => {
-      const overlayState = useChatStore.getState().overlay;
-      console.log("Starea overlay după procesare:", overlayState);
-      
-      if (overlayState.isVisible && overlayState.type === 'reservation') {
-        console.log("✅ TEST PASSED: Overlay s-a deschis corect");
-      } else {
-        console.log("❌ TEST FAILED: Overlay nu s-a deschis");
-      }
-      
-      console.groupEnd();
-    }, 100);
-  } else {
-    console.log("❌ [TEST] Tip de mesaj nepotrivit:", messageType);
-    console.groupEnd();
-  }
+  return useMiddlewareStore.getState().sendReservationAction(action, data, worker);
 };

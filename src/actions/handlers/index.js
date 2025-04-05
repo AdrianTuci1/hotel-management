@@ -2,7 +2,5 @@
  * @fileoverview Exportă handlerii pentru diferite tipuri de mesaje
  */
 
-export { handleChatResponse } from './chatHandler';
-export { handleReservationsUpdate } from './reservationHandler';
-export { handleNotification } from './automationHandler';
-export { handleConnectionStatus } from './statusHandler'; 
+// Nu mai exportăm handlerii individuali, deoarece logica a fost mutată în chatActions.js
+// Această structură este păstrată pentru compatibilitate, dar nu mai este folosită 

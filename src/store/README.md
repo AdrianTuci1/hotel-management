@@ -26,6 +26,12 @@ This document provides an overview of the state management stores used in the Ho
   - [Usage in Components](#calendar-usage-in-components)
 - [Store Integration Examples](#store-integration-examples)
 - [Important Implementation Notes](#important-implementation-notes)
+- [Middleware Store](#middleware-store)
+  - [Message Flow](#message-flow)
+  - [Middleware State Structure](#middleware-state-structure)
+  - [Key Functions](#middleware-key-functions)
+  - [Message Standardization](#message-standardization)
+  - [Integration Example](#integration-example)
 
 ## Chat Store
 
@@ -215,3 +221,119 @@ const handleShowCalendar = () => {
    - Date ranges should only be updated in response to chat interactions, not direct calendar interactions.
 
 This implementation prevents unexpected date range changes when users interact with the calendar directly, while still allowing the chat system to control the calendar view when needed.
+
+## Middleware Store
+
+The Middleware Store acts as a central processor for WebSocket messages, standardizing their format and routing them to the appropriate stores.
+
+### Message Flow
+
+```
+WebSocketWorker --(normalized message)--> Middleware --(processed data)--> Specific Stores
+                                             |
+                                             v
+                                        UI Components
+```
+
+### Middleware State Structure
+
+```javascript
+{
+  processing: false,              // Flag for message processing status
+  lastProcessedMessage: null      // Last received and processed message
+}
+```
+
+### Key Functions
+
+| Function | Description |
+|----------|-------------|
+| `processMessage(event)` | Central handler for all WebSocket messages |
+| `sendMessage(message, worker)` | Formats and sends chat messages to the WebSocket |
+| `sendAutomationAction(action, worker)` | Sends automation actions to the WebSocket |
+| `sendReservationAction(action, data, worker)` | Sends reservation actions to the WebSocket |
+
+### Message Standardization
+
+The middleware handles four main message types:
+
+1. **Chat Messages**
+   ```javascript
+   {
+     type: "chat",
+     payload: {
+       intent: "string",
+       type: "string",
+       message: "string",
+       ...additionalData
+     }
+   }
+   ```
+
+2. **Reservation Messages**
+   ```javascript
+   {
+     type: "reservations",
+     payload: {
+       action: "string",
+       reservations: [/* reservation objects */],
+       ...additionalData
+     }
+   }
+   ```
+
+3. **Notification Messages**
+   ```javascript
+   {
+     type: "notification",
+     payload: {
+       notification: {
+         type: "string",
+         title: "string",
+         message: "string",
+         data: {}
+       }
+     }
+   }
+   ```
+
+4. **History Messages**
+   ```javascript
+   {
+     type: "history",
+     payload: {
+       title: "string",
+       items: [/* history items */],
+       data: {}
+     }
+   }
+   ```
+
+### Integration Example
+
+```javascript
+// In a component that needs to handle WebSocket messages
+import { useMiddlewareStore } from '../store';
+
+// Sending a chat message
+const sendMessage = (message) => {
+  const worker = getWebSocketWorker();
+  useMiddlewareStore.getState().sendMessage(message, worker);
+};
+
+// Sending a reservation action
+const updateReservation = (reservationId, data) => {
+  const worker = getWebSocketWorker();
+  useMiddlewareStore.getState().sendReservationAction(
+    'update', 
+    { reservationId, ...data }, 
+    worker
+  );
+};
+```
+
+This middleware approach provides several benefits:
+- Centralized message processing logic
+- Consistent format for all WebSocket messages
+- Automatic routing to appropriate stores
+- Simplified debugging with standardized logging

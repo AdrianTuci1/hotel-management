@@ -30,6 +30,16 @@ let socket = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_INTERVAL = 5000; // 5 secunde
+let lastConnectionStatus = null; // Stocăm ultimul status pentru a evita mesaje duplicate
+
+// Constante pentru tipuri de mesaje
+const MESSAGE_TYPES = {
+  CHAT: 'chat',
+  RESERVATIONS: 'reservations',
+  NOTIFICATION: 'notification',
+  HISTORY: 'history',
+  STATUS: 'status'
+};
 
 /**
  * Conectează la serverul WebSocket și configurează handleri pentru evenimente
@@ -42,7 +52,13 @@ const connectWebSocket = () => {
   // Handler pentru conectare reușită
   socket.onopen = () => {
     console.log("✅ [WEBSOCKET] Connected to", SOCKET_URL);
-    postMessage({ type: "STATUS", payload: "connected" });
+    
+    // Trimitem status doar dacă s-a schimbat
+    if (lastConnectionStatus !== "connected") {
+      lastConnectionStatus = "connected";
+      postMessage({ type: MESSAGE_TYPES.STATUS, payload: "connected" });
+    }
+    
     reconnectAttempts = 0;
   };
 
@@ -52,186 +68,21 @@ const connectWebSocket = () => {
     console.group("🔍 [WEBSOCKET] MESSAGE RECEIVED");
     console.log("Raw data:", event.data);
     
-    // ======== STRATEGIE DE PROCESARE ÎN ETAPE ========
+    // Procesăm mesajul în format standardizat
+    processIncomingMessage(event.data);
     
-    // 1. PROCESARE FORMAT DIRECT OBIECT
-    if (typeof event.data === 'object' && event.data !== null) {
-      const directData = event.data;
-      
-      // Detecție format specific pentru show_calendar
-      if (directData.intent === 'show_calendar' && 
-          directData.type === 'action' && 
-          directData.action === 'show_calendar') {
-        
-        console.log("🎯 [WEBSOCKET] FORMAT HOTEL-BACKEND DETECTAT");
-        
-        // Trimitem direct ca CHAT_MESSAGE pentru procesare garantată
-        postMessage({
-          type: "CHAT_MESSAGE",
-          payload: directData
-        });
-        
-        console.groupEnd();
-        return; // Oprește procesarea ulterioară
-      }
-      
-      // Procesare generică obiect direct
-      if (directData.intent || directData.action) {
-        // Mesaje cu intent sau action -> CHAT_MESSAGE
-        postMessage({
-          type: "CHAT_MESSAGE",
-          payload: directData
-        });
-      } else if (Array.isArray(directData.reservations)) {
-        // Mesaje cu rezervări -> RESERVATION_ACTION
-        postMessage({
-          type: "RESERVATION_ACTION",
-          payload: directData
-        });
-      } else {
-        // Alte formate -> default CHAT_MESSAGE
-        postMessage({
-          type: "CHAT_MESSAGE",
-          payload: directData
-        });
-      }
-      
-      console.groupEnd();
-      return;
-    }
-    
-    // 2. PROCESARE FORMAT JSON STRING
-    if (typeof event.data === 'string') {
-      try {
-        const message = JSON.parse(event.data);
-        
-        // Detecție format hotel-backend în JSON
-        if (message.intent === 'show_calendar' && 
-            message.type === 'action' && 
-            message.action === 'show_calendar') {
-          
-          console.log("🎯 [WEBSOCKET] FORMAT HOTEL-BACKEND IN JSON");
-          
-          postMessage({
-            type: "CHAT_MESSAGE",
-            payload: message
-          });
-          
-          console.groupEnd();
-          return;
-        }
-        
-        // Procesare tipuri standard de mesaje
-        if (message.intent) {
-          // Format cu intent direct -> CHAT_MESSAGE
-          postMessage({ 
-            type: "CHAT_MESSAGE", 
-            payload: message
-          });
-        }
-        else if (message.response && message.response.intent) {
-          // Format cu response wrapper -> CHAT_MESSAGE cu payload response
-          postMessage({ 
-            type: "CHAT_MESSAGE", 
-            payload: message.response 
-          });
-        }
-        else if (Array.isArray(message) || (message.reservations && Array.isArray(message.reservations))) {
-          // Format rezervări -> RESERVATION_ACTION
-          const reservations = Array.isArray(message) ? message : message.reservations;
-          postMessage({ 
-            type: "RESERVATION_ACTION", 
-            payload: { 
-              action: message.action || "sync",
-              reservations: reservations 
-            } 
-          });
-        }
-        else if (message.action && typeof message.action === 'string') {
-          // Format action transformată în intent dacă este show_*
-          const intent = message.action.startsWith('show_') ? message.action : null;
-          
-          if (intent) {
-            postMessage({
-              type: "CHAT_MESSAGE",
-              payload: {
-                intent: intent,
-                type: 'action',
-                message: message.message || `Acțiune: ${intent}`,
-                ...message
-              }
-            });
-          } else {
-            // Trimitem ca atare -> CHAT_MESSAGE
-            postMessage({ type: "CHAT_MESSAGE", payload: message });
-          }
-        }
-        else if (message.type) {
-          // Procesare bazată pe tipul mesajului
-          const upperType = message.type.toUpperCase();
-          
-          if (["CHAT_RESPONSE", "MESSAGE", "CHAT"].includes(upperType)) {
-            postMessage({ type: "CHAT_MESSAGE", payload: message });
-          } 
-          else if (["RESERVATION", "BOOKING", "RESERVATIONS_UPDATE"].includes(upperType)) {
-            postMessage({ type: "RESERVATION_ACTION", payload: message });
-          }
-          else if (["AUTOMATION", "AUTO", "NOTIFICATION"].includes(upperType)) {
-            postMessage({ type: "AUTOMATION_ACTION", payload: message });
-          }
-          else {
-            // Default -> CHAT_MESSAGE
-            postMessage({ type: "CHAT_MESSAGE", payload: message });
-          }
-        }
-        else if (message.message && typeof message.message === 'string') {
-          // Mesaj simplu -> CHAT_MESSAGE format standard
-          postMessage({ 
-            type: "CHAT_MESSAGE", 
-            payload: {
-              message: message.message,
-              type: "message",
-              intent: "default"
-            }
-          });
-        }
-        else {
-          // Format necunoscut -> CHAT_MESSAGE cu avertisment
-          postMessage({ 
-            type: "CHAT_MESSAGE", 
-            payload: { 
-              message: "Received message in unknown format", 
-              type: "message",
-              intent: "default",
-              originalData: message 
-            } 
-          });
-        }
-      } catch (error) {
-        // Eroare la procesarea JSON
-        console.error("❌ [WEBSOCKET] Error parsing message:", error.message);
-        postMessage({ 
-          type: "CHAT_MESSAGE", 
-          payload: { 
-            type: "error",
-            message: "Error parsing WebSocket message" 
-          } 
-        });
-      }
-      
-      console.groupEnd();
-      return;
-    }
-    
-    // Format necunoscut de date
-    console.warn("❓ [WEBSOCKET] Unknown message data type:", typeof event.data);
     console.groupEnd();
   };
 
   // Handler pentru închiderea conexiunii
   socket.onclose = () => {
     console.warn("⚠️ [WEBSOCKET] Connection closed");
-    postMessage({ type: "STATUS", payload: "disconnected" });
+    
+    // Trimitem status doar dacă s-a schimbat
+    if (lastConnectionStatus !== "disconnected") {
+      lastConnectionStatus = "disconnected";
+      postMessage({ type: MESSAGE_TYPES.STATUS, payload: "disconnected" });
+    }
 
     // Mecanism de reconnectare cu număr maxim de încercări
     if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
@@ -247,13 +98,144 @@ const connectWebSocket = () => {
   socket.onerror = (error) => {
     console.error("❌ [WEBSOCKET] WebSocket error:", error);
     postMessage({ 
-      type: "CHAT_MESSAGE", 
+      type: MESSAGE_TYPES.CHAT, 
       payload: { 
         type: "error",
         message: "WebSocket connection error" 
       } 
     });
   };
+};
+
+/**
+ * Procesează un mesaj primit de la server și îl trimite în format standardizat
+ * către firul principal
+ * 
+ * @param {any} data - Datele primite de la server
+ * @returns {void}
+ */
+const processIncomingMessage = (data) => {
+  // CARCASĂ 1: OBIECT DIRECT
+  if (typeof data === 'object' && data !== null) {
+    const directObject = data;
+    
+    // Procesăm în funcție de proprietățile obiectului
+    if (directObject.type && typeof directObject.type === 'string') {
+      // Trimitem direct cu tipul standardizat
+      postMessageWithNormalizedType(directObject.type, directObject);
+      return;
+    }
+    
+    // Dacă nu are tip, detectăm tipul din alte proprietăți
+    if (directObject.intent || directObject.message) {
+      postMessage({ type: MESSAGE_TYPES.CHAT, payload: directObject });
+      return;
+    }
+    
+    if (Array.isArray(directObject.reservations)) {
+      postMessage({ type: MESSAGE_TYPES.RESERVATIONS, payload: directObject });
+      return;
+    }
+    
+    if (directObject.notification) {
+      postMessage({ type: MESSAGE_TYPES.NOTIFICATION, payload: directObject });
+      return;
+    }
+    
+    // Default fallback pentru obiecte
+    postMessage({ type: MESSAGE_TYPES.CHAT, payload: directObject });
+    return;
+  }
+  
+  // CARCASĂ 2: JSON STRING
+  if (typeof data === 'string') {
+    try {
+      const parsedData = JSON.parse(data);
+      
+      // După parsare, procesăm ca obiect
+      if (parsedData.type && typeof parsedData.type === 'string') {
+        // Trimitem direct cu tipul standardizat
+        postMessageWithNormalizedType(parsedData.type, parsedData);
+        return;
+      }
+      
+      // Dacă nu are tip, detectăm tipul din alte proprietăți
+      if (parsedData.intent || parsedData.message) {
+        postMessage({ type: MESSAGE_TYPES.CHAT, payload: parsedData });
+        return;
+      }
+      
+      if (parsedData.response && parsedData.response.intent) {
+        postMessage({ type: MESSAGE_TYPES.CHAT, payload: parsedData.response });
+        return;
+      }
+      
+      if (Array.isArray(parsedData.reservations) || Array.isArray(parsedData)) {
+        postMessage({ 
+          type: MESSAGE_TYPES.RESERVATIONS, 
+          payload: Array.isArray(parsedData) ? { reservations: parsedData } : parsedData 
+        });
+        return;
+      }
+      
+      if (parsedData.notification) {
+        postMessage({ type: MESSAGE_TYPES.NOTIFICATION, payload: parsedData });
+        return;
+      }
+      
+      // Default fallback pentru JSON
+      postMessage({ type: MESSAGE_TYPES.CHAT, payload: parsedData });
+    } catch (error) {
+      // Dacă nu e JSON valid, trimitem ca mesaj text simplu
+      console.error("❌ [WEBSOCKET] Error parsing JSON message:", error.message);
+      postMessage({ 
+        type: MESSAGE_TYPES.CHAT, 
+        payload: { 
+          type: "message",
+          message: data 
+        } 
+      });
+    }
+    return;
+  }
+  
+  // CARCASĂ 3: ALT TIP DE DATE
+  console.warn("❓ [WEBSOCKET] Unknown message data type:", typeof data);
+  postMessage({ 
+    type: MESSAGE_TYPES.CHAT, 
+    payload: { 
+      type: "system",
+      message: `Received message of unknown type: ${typeof data}` 
+    } 
+  });
+};
+
+/**
+ * Trimite un mesaj către firul principal, normalizând tipul mesajului
+ * 
+ * @param {string} type - Tipul mesajului
+ * @param {Object} payload - Conținutul mesajului
+ * @returns {void}
+ */
+const postMessageWithNormalizedType = (type, payload) => {
+  const upperType = type.toUpperCase();
+  
+  if (upperType === 'CHAT' || upperType === 'MESSAGE' || upperType === 'CHAT_MESSAGE') {
+    postMessage({ type: MESSAGE_TYPES.CHAT, payload });
+  } 
+  else if (upperType === 'RESERVATIONS' || upperType === 'BOOKING' || upperType === 'RESERVATION') {
+    postMessage({ type: MESSAGE_TYPES.RESERVATIONS, payload });
+  }
+  else if (upperType === 'NOTIFICATION' || upperType === 'ALERT' || upperType === 'AUTOMATION') {
+    postMessage({ type: MESSAGE_TYPES.NOTIFICATION, payload });
+  }
+  else if (upperType === 'HISTORY') {
+    postMessage({ type: MESSAGE_TYPES.HISTORY, payload });
+  }
+  else {
+    // Default, trimitem ca mesaj de chat
+    postMessage({ type: MESSAGE_TYPES.CHAT, payload });
+  }
 };
 
 // Inițializare conexiune WebSocket la pornirea worker-ului
@@ -307,7 +289,7 @@ self.onmessage = (event) => {
     } else {
       console.warn("⚠️ [WEBSOCKET] WebSocket not connected, message not sent");
       postMessage({ 
-        type: "CHAT_MESSAGE", 
+        type: MESSAGE_TYPES.CHAT, 
         payload: { 
           type: "error",
           message: "WebSocket not connected, message not sent" 
@@ -347,7 +329,7 @@ self.onmessage = (event) => {
       
       // Format conform protocolului
       socket.send(JSON.stringify({ 
-        type: "RESERVATION_ACTION", 
+        type: "reservations", 
         action: payload.action,
         data: payload.data || {}
       }));

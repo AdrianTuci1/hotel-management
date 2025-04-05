@@ -10,16 +10,16 @@
  */
 export const INCOMING_MESSAGE_TYPES = {
   /** Mesaje de chat și răspunsuri */
-  CHAT_MESSAGE: 'CHAT_MESSAGE',
+  CHAT: 'chat',
   
   /** Acțiuni legate de rezervări */
-  RESERVATION_ACTION: 'RESERVATION_ACTION',
+  RESERVATIONS: 'reservations',
   
   /** Acțiuni de automatizare și notificări */
-  AUTOMATION_ACTION: 'AUTOMATION_ACTION',
+  NOTIFICATION: 'notification',
   
-  /** Actualizări de stare a conexiunii */
-  STATUS: 'STATUS'
+  /** Istoric conversații */
+  HISTORY: 'history'
 };
 
 /**

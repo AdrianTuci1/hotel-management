@@ -14,27 +14,27 @@ import { INCOMING_MESSAGE_TYPES, CHAT_INTENTS, RESPONSE_TYPES } from '../types';
  * @returns {string} - Tipul normalizat din INCOMING_MESSAGE_TYPES
  */
 export const normalizeMessageType = (type) => {
-  if (!type) return INCOMING_MESSAGE_TYPES.CHAT_MESSAGE;
+  if (!type) return INCOMING_MESSAGE_TYPES.CHAT;
   
-  // Convertim la majuscule pentru comparații consistente
-  const upperType = type.toUpperCase();
+  // Convertim la lowercase pentru comparații consistente
+  const lowerType = type.toLowerCase();
   
   // Mapăm la cele patru tipuri principale
-  if (["CHAT", "CHAT_RESPONSE", "CHAT_MESSAGE", "MESSAGE"].includes(upperType)) {
-    return INCOMING_MESSAGE_TYPES.CHAT_MESSAGE;
+  if (["chat", "chat_response", "chat_message", "message"].includes(lowerType)) {
+    return INCOMING_MESSAGE_TYPES.CHAT;
   } 
-  else if (["RESERVATION", "RESERVATIONS_UPDATE", "BOOKING", "RESERVATION_ACTION"].includes(upperType)) {
-    return INCOMING_MESSAGE_TYPES.RESERVATION_ACTION;
+  else if (["reservations", "reservations_update", "booking", "reservation_action"].includes(lowerType)) {
+    return INCOMING_MESSAGE_TYPES.RESERVATIONS;
   }
-  else if (["AUTOMATION", "AUTOMATION_ACTION", "NOTIFICATION"].includes(upperType)) {
-    return INCOMING_MESSAGE_TYPES.AUTOMATION_ACTION;
+  else if (["notification", "automation", "automation_action"].includes(lowerType)) {
+    return INCOMING_MESSAGE_TYPES.NOTIFICATION;
   }
-  else if (["STATUS", "CONNECTION_STATUS"].includes(upperType)) {
-    return INCOMING_MESSAGE_TYPES.STATUS;
+  else if (["history", "conversation_history"].includes(lowerType)) {
+    return INCOMING_MESSAGE_TYPES.HISTORY;
   }
   
   // Default la mesaj de chat dacă e necunoscut
-  return INCOMING_MESSAGE_TYPES.CHAT_MESSAGE;
+  return INCOMING_MESSAGE_TYPES.CHAT;
 };
 
 /**
@@ -116,36 +116,21 @@ export const parseChatMessage = (payload) => {
 export const parseReservationAction = (payload) => {
   // Caz 1: Array direct de rezervări
   if (Array.isArray(payload)) {
-    return {
-      action: "init",
-      reservations: payload
-    };
+    return payload;
   }
   
   // Caz 2: Obiect cu array de rezervări
   if (payload.reservations && Array.isArray(payload.reservations)) {
-    return {
-      action: payload.action || "sync",
-      reservations: payload.reservations,
-      ...payload
-    };
+    return payload.reservations;
   }
   
   // Caz 3: Obiect cu o singură rezervare
   if (payload.reservation) {
-    return {
-      action: payload.action || "update",
-      reservations: [payload.reservation],
-      ...payload
-    };
+    return [payload.reservation];
   }
   
   // Default pentru cazuri necunoscute
-  return {
-    action: "unknown",
-    reservations: [],
-    originalData: payload
-  };
+  return [];
 };
 
 /**
@@ -158,82 +143,81 @@ export const parseAutomationAction = (payload) => {
   // Verificăm dacă avem un mesaj de automatizare complet
   if (payload.notification) {
     return {
-      type: "automation",
       notification: {
         type: payload.notification.type,
         title: payload.notification.title || "Notificare automatizare",
         message: payload.notification.message,
         data: payload.notification.data
-      }
+      },
+      action: payload.action
     };
   }
 
   // Caz 1: Mesaj cu acțiune și mesaj
   if (payload.action && payload.message) {
     return {
-      type: "automation",
       notification: {
         type: payload.type || "notification",
         title: payload.title || "Notificare automatizare",
         message: payload.message,
         data: payload.data
-      }
+      },
+      action: payload.action
     };
   }
   
   // Caz 2: Doar mesaj
   if (payload.message) {
     return {
-      type: "automation",
-      notification: {
-        type: "notification",
-        title: "Notificare automatizare",
-        message: payload.message,
-        data: payload.data
-      }
+      message: payload.message,
+      action: payload.action
     };
   }
   
   // Default pentru cazuri necunoscute
   return {
-    type: "automation",
-    notification: {
-      type: "notification",
-      title: "Notificare automatizare",
-      message: "Received automation message in unknown format",
-      data: payload
-    }
+    message: "Received automation message in unknown format",
+    action: payload.action
   };
 };
 
 /**
- * Procesează mesaj de status pentru a normaliza formatul
+ * Procesează un mesaj de istoric
  * 
- * @param {string|Object} payload - Payload-ul mesajului
- * @returns {Object} Mesaj normalizat cu format standard
+ * @param {Object} payload - Payload-ul mesajului
+ * @returns {Object} Mesaj normalizat
  */
-export const parseStatusMessage = (payload) => {
-  // Caz 1: String direct (connected/disconnected)
-  if (typeof payload === 'string') {
+export const parseHistoryMessage = (payload) => {
+  // Caz 1: Format complet cu obiect history
+  if (payload.history) {
     return {
-      status: payload,
-      timestamp: new Date().toISOString()
+      history: {
+        title: payload.history.title || "Istoric conversații",
+        items: payload.history.items || [],
+        data: payload.history.data,
+        component: payload.history.component
+      },
+      action: payload.action,
+      message: payload.message
     };
   }
   
-  // Caz 2: Obiect cu status
-  if (payload.status) {
+  // Caz 2: Format simplu cu mesaj
+  if (payload.message) {
     return {
-      status: payload.status,
-      timestamp: payload.timestamp || new Date().toISOString(),
-      ...payload
+      message: payload.message,
+      action: payload.action
     };
   }
   
-  // Default pentru cazuri necunoscute
-  return {
-    status: "unknown",
-    timestamp: new Date().toISOString(),
-    originalData: payload
-  };
+  // Caz 3: Format cu acțiune
+  if (payload.action) {
+    return {
+      action: payload.action,
+      message: `Acțiune: ${payload.action}`
+    };
+  }
+  
+  // Caz 4: Format necunoscut, returnăm payload-ul original
+  return payload;
 }; 

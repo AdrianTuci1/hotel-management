@@ -6,6 +6,9 @@
 
 import { useChatStore } from "../../store/chatStore";
 
+// Stocăm ultimul status pentru a evita loguri duplicate
+let lastStatus = null;
+
 /**
  * Procesează un mesaj de status pentru conexiunea WebSocket
  * 
@@ -13,9 +16,6 @@ import { useChatStore } from "../../store/chatStore";
  * @returns {void}
  */
 export const handleConnectionStatus = (payload) => {
-  console.group("🔌 [STATUS_HANDLER] Processing connection status");
-  console.log("Payload:", payload);
-  
   // Extragem status din diferite formate posibile
   let status;
   
@@ -25,11 +25,19 @@ export const handleConnectionStatus = (payload) => {
     status = payload.status;
   } else {
     console.error("❌ [STATUS_HANDLER] Invalid status payload");
-    console.groupEnd();
     return;
   }
   
-  console.log("Connection status:", status);
+  // Verificăm dacă statusul s-a schimbat
+  if (status === lastStatus) {
+    // Status neschimbat, nu mai logăm
+    return;
+  }
+  
+  // Status schimbat, logăm și actualizăm
+  console.group("🔌 [STATUS_HANDLER] Connection status changed");
+  console.log("New status:", status);
+  console.log("Previous status:", lastStatus);
   
   // Actualizăm starea conexiunii în store
   const { setConnectionStatus } = useChatStore.getState();
@@ -54,4 +62,7 @@ export const handleConnectionStatus = (payload) => {
   
   console.log("✅ [STATUS_HANDLER] Connection status updated");
   console.groupEnd();
+  
+  // Salvăm noul status
+  lastStatus = status;
 }; 
