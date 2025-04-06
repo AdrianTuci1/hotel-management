@@ -1,23 +1,39 @@
 import React from 'react';
 import styles from './ReservationDetails.module.css';
 import { useCalendarStore } from '../../store/calendarStore';
+import useRoomOptionsStore from '../../store/roomOptionsStore';
 
-const RoomsSection = ({
-  defaultDates,
-  selectedRooms,
-  setReservationData,
-  isRoomAvailable,
-  addRoom,
-  removeRoom,
-  updateRoomPeriod,
-  updateRoomPrice,
-  getRoomInfo,
-  setHighlightedRoom,
-  setDefaultDates
-}) => {
-  // Get rooms and defaultDates functions from CalendarStore
-  const rooms = useCalendarStore(state => state.rooms);
-  const setCalendarDefaultDates = useCalendarStore(state => state.setDefaultDates);
+const RoomsSection = ({ setReservationData }) => {
+  // Get state and actions from stores
+  const { 
+    rooms: calendarRooms,
+    defaultDates, 
+    setDefaultDates, 
+    isRoomAvailable 
+  } = useCalendarStore(state => ({
+    rooms: state.rooms,
+    defaultDates: state.defaultDates,
+    setDefaultDates: state.setDefaultDates,
+    isRoomAvailable: state.isRoomAvailable
+  }));
+
+  const { 
+    selectedRooms, 
+    addRoom, 
+    removeRoom, 
+    updateRoomPeriod, 
+    updateRoomPrice, 
+    getRoomInfo, 
+    setHighlightedRoom 
+  } = useRoomOptionsStore(state => ({
+    selectedRooms: state.selectedRooms,
+    addRoom: state.addRoom,
+    removeRoom: state.removeRoom,
+    updateRoomPeriod: state.updateRoomPeriod,
+    updateRoomPrice: state.updateRoomPrice,
+    getRoomInfo: state.getRoomInfo,
+    setHighlightedRoom: state.setHighlightedRoom
+  }));
 
   // Handler pentru modificarea perioadei de verificare
   const handleCheckPeriodChange = (field, value) => {
@@ -36,12 +52,12 @@ const RoomsSection = ({
 
   // Handler pentru selectarea/deselectarea unei camere
   const handleRoomSelect = (roomNumber) => {
-    const room = selectedRooms.find(r => r.roomNumber === roomNumber);
-    if (room) {
+    const isSelected = selectedRooms.some(r => r.roomNumber === roomNumber);
+    if (isSelected) {
       // Ștergem camera din roomOptionsStore
       removeRoom(roomNumber);
       
-      // Actualizăm rooms în reservationData
+      // Actualizăm rooms în reservationData (passed up via prop)
       setReservationData(prev => ({
         ...prev,
         rooms: prev.rooms?.filter(r => r.roomNumber !== roomNumber) || []
@@ -52,18 +68,18 @@ const RoomsSection = ({
       const basePrice = roomInfo?.basePrice || 0;
       
       // Adăugăm camera în roomOptionsStore
-      addRoom(roomNumber);
+      addRoom(roomNumber, defaultDates.startDate, defaultDates.endDate);
       updateRoomPrice(roomNumber, basePrice);
 
-      // Actualizăm rooms în reservationData
+      // Actualizăm rooms în reservationData (passed up via prop)
       setReservationData(prev => ({
         ...prev,
         rooms: [
           ...(prev.rooms || []),
           {
             roomNumber,
-            startDate: prev.startDate || defaultDates.startDate || "",
-            endDate: prev.endDate || defaultDates.endDate || "",
+            startDate: defaultDates.startDate || "",
+            endDate: defaultDates.endDate || "",
             price: basePrice,
             type: roomInfo?.type || "Standard",
             status: "pending"
@@ -86,16 +102,14 @@ const RoomsSection = ({
       // Actualizăm perioada în roomOptionsStore
       updateRoomPeriod(roomNumber, startDate, endDate);
       
-      // Actualizăm datele rezervării
-      const updatedRooms = selectedRooms.map(r => 
-        r.roomNumber === roomNumber 
-          ? { ...r, startDate, endDate }
-          : r
-      );
-
+      // Actualizăm datele rezervării (passed up via prop)
       setReservationData(prev => ({
         ...prev,
-        rooms: updatedRooms
+        rooms: (prev.rooms || []).map(r => 
+          r.roomNumber === roomNumber 
+            ? { ...r, startDate, endDate }
+            : r
+        )
       }));
     } else {
       alert("❌ Camera nu este disponibilă pentru perioada selectată!");
@@ -104,15 +118,16 @@ const RoomsSection = ({
 
   // Handler pentru modificarea prețului unei camere
   const handleRoomPriceChange = (roomNumber, value) => {
+    const price = parseFloat(value) || 0;
     // Actualizăm prețul în roomOptionsStore
-    updateRoomPrice(roomNumber, value);
+    updateRoomPrice(roomNumber, price);
     
-    // Actualizăm datele rezervării
+    // Actualizăm datele rezervării (passed up via prop)
     setReservationData(prev => ({
       ...prev,
-      rooms: selectedRooms.map(r => 
+      rooms: (prev.rooms || []).map(r => 
         r.roomNumber === roomNumber 
-          ? { ...r, price: value }
+          ? { ...r, price }
           : r
       )
     }));
@@ -122,7 +137,7 @@ const RoomsSection = ({
   const handleRoomConfirm = (roomNumber) => {
     setReservationData(prev => ({
       ...prev,
-      rooms: prev.rooms.map(r => 
+      rooms: (prev.rooms || []).map(r => 
         r.roomNumber === roomNumber 
           ? { ...r, status: "confirmed" }
           : r
@@ -131,7 +146,7 @@ const RoomsSection = ({
   };
 
   // Filtrăm camerele disponibile pentru perioada selectată
-  const availableRooms = rooms.filter(room => 
+  const availableRooms = calendarRooms.filter(room => 
     isRoomAvailableInPeriod(room.number) || 
     selectedRooms.some(r => r.roomNumber === room.number)
   );
@@ -184,7 +199,7 @@ const RoomsSection = ({
                   <div className={styles.roomType}>{room.type}</div>
                 </div>
                 <div className={styles.roomBasePrice}>
-                  {room.price} RON/noapte
+                  {room.basePrice} RON/noapte
                 </div>
               </div>
             );
@@ -198,7 +213,10 @@ const RoomsSection = ({
           <h5>🎯 Camere Selectate</h5>
           {selectedRooms.map((room) => {
             const roomInfo = getRoomInfo(room.roomNumber);
-            const isConfirmed = room.status === "confirmed";
+            const reservationRoomData = (setReservationData && typeof setReservationData === 'function') 
+              ? (setReservationData?.rooms || []).find(r => r.roomNumber === room.roomNumber)
+              : {};
+            const isConfirmed = reservationRoomData?.status === "confirmed";
 
             return (
               <div key={room.roomNumber} className={`${styles.selectedRoomCard} ${isConfirmed ? styles.confirmed : ''}`}>
@@ -246,11 +264,12 @@ const RoomsSection = ({
                     <label>Preț/noapte:</label>
                     <input
                       type="number"
-                      value={room.price || roomInfo?.basePrice || ""}
+                      value={room.price !== undefined ? room.price : (roomInfo?.basePrice || "")}
                       onChange={(e) => handleRoomPriceChange(room.roomNumber, e.target.value)}
-                      placeholder="Preț/noapte"
                       disabled={isConfirmed}
+                      step="10"
                     />
+                    <span>RON</span>
                   </div>
                 </div>
               </div>

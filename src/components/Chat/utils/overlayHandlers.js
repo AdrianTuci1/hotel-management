@@ -1,57 +1,44 @@
 /**
  * Chat Overlay Handlers
  * 
- * This file contains utility functions for handling different overlay actions
- * in the chat interface. These handlers can be used to manage reservations,
- * notifications, and other interactive elements.
+ * Utility functions for handling overlay actions, interacting directly with stores and APIs.
  */
 
 import { createReservation, updateReservation, deleteReservation } from '../../../api/reservation.service';
 import { createRoom, updateRoom, deleteRoom } from '../../../api/room.service';
+import { useChatStore } from '../../../store/chatStore';
+import useRoomOptionsStore from '../../../store/roomOptionsStore';
+import { useCalendarStore } from '../../../store/calendarStore';
 
 /**
- * Handles showing reservation details in the overlay
+ * Handles showing reservation details in the overlay.
+ * Fetches required store actions/state directly.
  * 
- * @param {Object} reservation - The reservation data to display
- * @param {Object} overlay - Current overlay state
- * @param {Function} showOverlay - Function to show overlay (from ChatStore)
- * @param {Function} resetRoomOptions - Function to reset room options
- * @param {Function} setDefaultDates - Function to set default calendar dates
- * @param {Function} updateViewPeriod - Function to update calendar view period
- * @param {Function} addRoom - Function to add a room to selection
- * @param {Function} updateRoomPrice - Function to update room price
- * @param {Function} setHighlightedRoom - Function to highlight a room
- * @param {Function} removeMessage - Function to remove a message from chat
- * @param {string} messageId - ID of the reservation message
+ * @param {Object} reservation - The reservation data to display.
+ * @param {string} messageId - ID of the message that triggered showing details.
  * @returns {void}
  */
-export const handleShowDetails = (
-  reservation,
-  overlay,
-  showOverlay,
-  resetRoomOptions,
-  setDefaultDates,
-  updateViewPeriod,
-  addRoom,
-  updateRoomPrice,
-  setHighlightedRoom,
-  removeMessage,
-  messageId
-) => {
+export const handleShowDetails = (reservation, messageId) => {
+  // Get necessary functions/state from stores
+  const { showOverlay, removeMessage, getState: getChatState } = useChatStore.getState();
+  const { overlay } = getChatState(); // Get current overlay state
+  const { reset: resetRoomOptions, addRoom, updateRoomPrice, setHighlightedRoom } = useRoomOptionsStore.getState();
+  const { setDefaultDates, updateViewPeriod } = useCalendarStore.getState();
+
   // Don't reinitialize if we're already showing this reservation
   if (overlay.isVisible && overlay.data?.id === reservation.id) {
+    console.log("🔄 [OverlayHandler] Reservation overlay already visible for:", reservation.id);
     return;
   }
   
-  // Debug - log the reservation data structure
-  console.log('🔍 DEBUG - Reservation data:', JSON.stringify(reservation, null, 2));
+  console.log('🔍 [OverlayHandler] Showing details for reservation:', reservation, 'Message ID:', messageId);
 
-  // Remove the reservation message from chat while overlay is open
+  // Remove the originating message from chat while overlay is open
   if (messageId) {
     removeMessage(messageId);
   }
 
-  // Initialize reservation data
+  // Prepare initial data for the overlay
   const initialData = {
     id: reservation.id,
     fullName: reservation.fullName || reservation.guestName || "",
@@ -62,249 +49,290 @@ export const handleShowDetails = (
     hasInvoice: reservation.hasInvoice || false,
     hasReceipt: reservation.hasReceipt || false,
     rooms: reservation.rooms || [],
-    // Add the dates from reservation directly to the overlay data
+    // Include dates from reservation data if available
     startDate: reservation.startDate || "",
     endDate: reservation.endDate || "",
-    messageId: messageId // Store the message ID for later reference
+    messageId: messageId // Store message ID for potential later use (e.g., restore on cancel)
   };
   
-  // Debug - log the initial data
-  console.log('🔍 DEBUG - Initial overlay data:', JSON.stringify(initialData, null, 2));
+  console.log('📦 [OverlayHandler] Initial overlay data prepared:', initialData);
 
-  // Reset room options and update calendar if needed
+  // Reset room options store state
   resetRoomOptions();
-  if (reservation.rooms?.length) {
-    const firstRoom = reservation.rooms[0];
-    setDefaultDates({
-      startDate: firstRoom.startDate,
-      endDate: firstRoom.endDate
-    });
-    updateViewPeriod(firstRoom.startDate, firstRoom.endDate);
 
-    // Add rooms to selection
+  // Determine default dates and view period for calendar/room options
+  let defaultStartDate = reservation.startDate;
+  let defaultEndDate = reservation.endDate;
+
+  if (reservation.rooms?.length) {
+    // If rooms exist, use the first room's dates as the primary period
+    const firstRoom = reservation.rooms[0];
+    defaultStartDate = firstRoom.startDate || defaultStartDate;
+    defaultEndDate = firstRoom.endDate || defaultEndDate;
+    
+    console.log(`📅 [OverlayHandler] Setting default dates/view from first room: ${defaultStartDate} - ${defaultEndDate}`);
+    
+    // Add existing rooms to the room options store
     reservation.rooms.forEach(room => {
       addRoom(room.roomNumber, room.startDate, room.endDate);
-      updateRoomPrice(room.roomNumber, room.basePrice || room.price);
-      setHighlightedRoom(room.roomNumber);
+      updateRoomPrice(room.roomNumber, room.basePrice || room.price || 0);
+      setHighlightedRoom(room.roomNumber); // Highlight initially
     });
-  } else if (reservation.startDate && reservation.endDate) {
-    // If no rooms but we have dates, set them as default
-    setDefaultDates({
-      startDate: reservation.startDate,
-      endDate: reservation.endDate
-    });
-    updateViewPeriod(reservation.startDate, reservation.endDate);
-    console.log('🔍 DEBUG - Setting dates from reservation:', reservation.startDate, reservation.endDate);
+    // Set highlight back to null after a short delay
+    setTimeout(() => setHighlightedRoom(null), 500); 
+
+  } else if (defaultStartDate && defaultEndDate) {
+    console.log(`📅 [OverlayHandler] Setting default dates/view from reservation: ${defaultStartDate} - ${defaultEndDate}`);
+  } else {
+    console.log("⚠️ [OverlayHandler] No dates found in reservation or rooms data.");
   }
 
-  // Utilizăm funcția showOverlay din ChatStore
+  // Update calendar store if we have valid dates
+  if (defaultStartDate && defaultEndDate) {
+    setDefaultDates({ startDate: defaultStartDate, endDate: defaultEndDate });
+    updateViewPeriod(defaultStartDate, defaultEndDate);
+  }
+
+  // Show the reservation overlay using the prepared data
   showOverlay('reservation', initialData);
 };
 
 /**
- * Handles different overlay actions like updating, finalizing or deleting a reservation
+ * Handles various overlay actions (create, update, delete for reservations and rooms).
+ * Fetches required store actions/state directly.
  * 
- * @param {string} action - The action to perform
- * @param {Object} data - The data associated with the action
- * @param {Object} options - Additional options and callbacks
+ * @param {string} action - The action identifier (e.g., 'finalizeReservation', 'addRoom').
+ * @param {Object} data - The data associated with the action.
  * @returns {Promise<void>}
  */
-export const handleOverlayAction = async (action, data, options) => {
-  const {
-    setOverlay,
-    closeOverlay,
-    selectedRooms,
-    getRoomInfo,
-    addMessage,
-    resetRoomOptions,
-    restoreMessage
-  } = options;
+export const handleOverlayAction = async (action, data) => {
+  // Get necessary functions/state from stores
+  const { addMessage, closeOverlay, updateOverlayData, restoreMessage } = useChatStore.getState();
+  const { selectedRooms, getRoomInfo, reset: resetRoomOptions } = useRoomOptionsStore.getState();
+
+  console.log(`🚀 [OverlayHandler] Handling action: ${action}`, data);
 
   switch (action) {
-    case 'updateReservation':
-      try {
-        // Actualizează datele overlay-ului fără a-l închide
-        setOverlay(data);
-        
-        // Trimite actualizarea către server
-        await updateReservation(data.id, data);
-        
-        addMessage({
-          type: "ai",
-          text: "Rezervarea a fost actualizată cu succes."
-        });
-      } catch (error) {
-        console.error('Error updating reservation:', error);
-        addMessage({
-          type: "error",
-          text: "❌ A apărut o eroare la actualizarea rezervării!"
-        });
-      }
+    // ----- Reservation Actions ----- 
+    case 'updateReservationDataOnly':
+      // Only update the data in the overlay state, no API call
+      console.log("💾 [OverlayHandler] Updating overlay data locally:", data);
+      updateOverlayData(data);
+      // No message needed for just internal state update
       break;
 
     case 'finalizeReservation':
       try {
+        // Ensure selected rooms from the store are included in the final data
         const finalData = {
           ...data,
+          // Map selected rooms from the store, getting additional info like type
           rooms: selectedRooms.map(room => ({
-            ...room,
-            type: getRoomInfo(room.roomNumber)?.type || "Standard"
+            ...room, // Includes roomNumber, startDate, endDate, price from store
+            type: getRoomInfo(room.roomNumber)?.type || "Standard" // Add type
           }))
         };
+        console.log("💾 [OverlayHandler] Finalizing reservation with data:", finalData);
 
-        await createReservation(finalData);
+        // API call to create/save the reservation
+        const createdReservation = await createReservation(finalData);
+        console.log("✅ [OverlayHandler] Reservation created/saved:", createdReservation);
 
-        if (selectedRooms[0]) {
-          const room = selectedRooms[0];
-          // Restore the original message to the chat with confirmation
-          if (data.messageId) {
-            restoreMessage(data.messageId);
-          }
-          
-          addMessage({
-            type: "ai",
-            text: `Rezervare finalizată cu succes pentru camera ${room.roomNumber} în perioada ${room.startDate} - ${room.endDate}.`
-          });
+        // Restore original message (optional, based on UX preference)
+        if (data.messageId) {
+           // Restore message without cancellation flag
+           restoreMessage(data.messageId, false); 
         }
-
-        // Închide overlay-ul
+          
+        addMessage({
+          id: `ai-${Date.now()}`,
+          type: "ai",
+          text: `✅ Rezervare finalizată cu succes pentru ${finalData.fullName}.`
+        });
+        
         closeOverlay();
         resetRoomOptions();
       } catch (error) {
-        console.error('Error saving reservation:', error);
+        console.error('❌ [OverlayHandler] Error finalizing reservation:', error);
         addMessage({
+          id: `error-${Date.now()}`,
           type: "error",
-          text: "❌ A apărut o eroare la salvarea rezervării!"
+          text: `❌ Eroare la finalizarea rezervării: ${error.message}`
+        });
+      }
+      break;
+
+    case 'updateReservation': // This might be triggered by ReservationDetails internally if needed
+      try {
+        console.log("💾 [OverlayHandler] Updating reservation via API:", data);
+        // Assume data contains the full updated reservation object including ID
+        await updateReservation(data.id, data);
+        
+        addMessage({
+          id: `ai-${Date.now()}`,
+          type: "ai",
+          text: `✅ Rezervarea ${data.id} a fost actualizată.`
+        });
+        // Decide if overlay should close after update
+        // closeOverlay(); 
+        // resetRoomOptions();
+      } catch (error) {
+        console.error('❌ [OverlayHandler] Error updating reservation:', error);
+        addMessage({
+          id: `error-${Date.now()}`,
+          type: "error",
+          text: `❌ Eroare la actualizarea rezervării ${data.id}: ${error.message}`
         });
       }
       break;
 
     case 'deleteReservation':
-      if (window.confirm("Sigur doriți să ștergeți această rezervare?")) {
+      // Confirmation should ideally happen in the component before calling this handler
+      if (window.confirm("Sunteți sigur că doriți să ștergeți această rezervare?")) { // Keep confirmation for safety
         try {
+          console.log("🗑️ [OverlayHandler] Deleting reservation:", data.id);
           await deleteReservation(data.id);
           
-          // Restore the original message to the chat showing it was canceled
+          // Restore original message with cancellation flag
           if (data.messageId) {
-            restoreMessage(data.messageId, true);
+            restoreMessage(data.messageId, true); 
           }
           
           addMessage({
+            id: `ai-${Date.now()}`,
             type: "ai",
-            text: "Rezervarea a fost anulată cu succes."
+            text: `🗑️ Rezervarea ${data.id} a fost anulată/ștearsă.`
           });
           
-          // Închide overlay-ul
           closeOverlay();
           resetRoomOptions();
         } catch (error) {
-          console.error('Error deleting reservation:', error);
+          console.error('❌ [OverlayHandler] Error deleting reservation:', error);
           addMessage({
+            id: `error-${Date.now()}`,
             type: "error",
-            text: "❌ A apărut o eroare la ștergerea rezervării!"
+            text: `❌ Eroare la ștergerea rezervării ${data.id}: ${error.message}`
           });
         }
       }
       break;
 
+    // ----- Room Actions ----- 
     case 'addRoom':
       try {
         const roomData = {
-          number: data.roomNumber,
-          type: data.roomType,
-          basePrice: parseFloat(data.price),
-          features: data.features || [],
-          status: data.availability ? 'available' : 'maintenance'
+          number: data.number,
+          type: data.type,
+          basePrice: parseFloat(data.price) || 0,
+          // Add other fields as needed by API/component (features, status)
+          // features: data.features || [],
+          // status: data.availability ? 'available' : 'maintenance' 
         };
-
+        console.log("💾 [OverlayHandler] Adding new room:", roomData);
+        
         await createRoom(roomData);
         
         addMessage({
+          id: `ai-${Date.now()}`,
           type: "ai",
-          text: `Camera ${data.roomNumber} a fost adăugată cu succes.`
+          text: `✅ Camera ${data.number} a fost adăugată.`
         });
         
-        closeOverlay();
+        closeOverlay(); // Close after adding
       } catch (error) {
-        console.error('Error adding room:', error);
+        console.error('❌ [OverlayHandler] Error adding room:', error);
         addMessage({
+          id: `error-${Date.now()}`,
           type: "error",
-          text: "❌ A apărut o eroare la adăugarea camerei!"
+          text: `❌ Eroare la adăugarea camerei ${data.number}: ${error.message}`
         });
       }
       break;
 
     case 'updateRoom':
       try {
-        const roomData = {
-          type: data.roomType,
-          basePrice: parseFloat(data.price),
-          features: data.features || [],
-          status: data.availability ? 'available' : 'maintenance'
+        // Assume data contains room number and fields to update
+        const roomNumber = data.number; // Or data.id if using ID
+        const updateData = {
+          type: data.type,
+          basePrice: parseFloat(data.price) || 0,
+          // features: data.features || [],
+          // status: data.availability ? 'available' : 'maintenance' 
         };
+        console.log(`💾 [OverlayHandler] Updating room ${roomNumber}:`, updateData);
 
-        await updateRoom(data.roomNumber, roomData);
+        await updateRoom(roomNumber, updateData);
         
         addMessage({
+          id: `ai-${Date.now()}`,
           type: "ai",
-          text: `Camera ${data.roomNumber} a fost actualizată cu succes.`
+          text: `✅ Camera ${roomNumber} a fost actualizată.`
         });
-        
-        closeOverlay();
+        closeOverlay(); // Close after updating
       } catch (error) {
-        console.error('Error updating room:', error);
+        console.error(`❌ [OverlayHandler] Error updating room ${data.number}:`, error);
         addMessage({
+          id: `error-${Date.now()}`,
           type: "error",
-          text: "❌ A apărut o eroare la actualizarea camerei!"
+          text: `❌ Eroare la actualizarea camerei ${data.number}: ${error.message}`
         });
       }
       break;
 
     case 'deleteRoom':
-      if (window.confirm("Sigur doriți să ștergeți această cameră?")) {
-        try {
-          await deleteRoom(data.roomNumber);
-          
-          addMessage({
-            type: "ai",
-            text: `Camera ${data.roomNumber} a fost ștearsă cu succes.`
-          });
-          
-          closeOverlay();
-        } catch (error) {
-          console.error('Error deleting room:', error);
-          addMessage({
-            type: "error",
-            text: "❌ A apărut o eroare la ștergerea camerei!"
-          });
-        }
+       // Confirmation should happen in component
+       if (window.confirm(`Sunteți sigur că doriți să ștergeți camera ${data.number}?`)) {
+         try {
+           const roomNumber = data.number; // Or data.id
+           console.log(`🗑️ [OverlayHandler] Deleting room ${roomNumber}`);
+           await deleteRoom(roomNumber);
+           
+           addMessage({
+            id: `ai-${Date.now()}`,
+             type: "ai",
+             text: `🗑️ Camera ${roomNumber} a fost ștearsă.`
+           });
+           closeOverlay(); // Close after deleting
+         } catch (error) {
+           console.error(`❌ [OverlayHandler] Error deleting room ${data.number}:`, error);
+           addMessage({
+            id: `error-${Date.now()}`,
+             type: "error",
+             text: `❌ Eroare la ștergerea camerei ${data.number}: ${error.message}`
+           });
+         }
+       }
+      break;
+
+    // ----- Product Sales Actions ----- 
+    case 'completeSale':
+      try {
+        console.log("🛒 [OverlayHandler] Completing product sale:", data);
+        // TODO: Implement API call for product sales (e.g., createSale(data))
+        // await createSale(data);
+        
+        addMessage({
+          id: `ai-${Date.now()}`,
+          type: "ai",
+          text: `🛒 Vânzare de ${data.totalPrice} RON finalizată${data.customerName ? ` pentru ${data.customerName}` : ''}.`
+        });
+        closeOverlay();
+      } catch (error) {
+        console.error('❌ [OverlayHandler] Error completing sale:', error);
+        addMessage({
+          id: `error-${Date.now()}`,
+          type: "error",
+          text: `❌ Eroare la finalizarea vânzării: ${error.message}`
+        });
       }
       break;
 
-    case 'acceptNotification':
-    case 'dismissNotification':
-      // Handle notification actions
-      closeOverlay();
-      break;
-
-    // Acțiuni pentru overlay de analiză
-    case 'exportAnalysis':
-      addMessage({
-        type: "ai",
-        text: "Raportul a fost exportat cu succes."
-      });
-      closeOverlay();
-      break;
-
-    case 'applyRecommendation':
-      addMessage({
-        type: "ai",
-        text: `Recomandarea "${data.title}" a fost aplicată.`
-      });
-      closeOverlay();
-      break;
-
     default:
-      console.warn('Unsupported overlay action:', action);
+      console.warn(`🤷 [OverlayHandler] Unhandled action type: ${action}`);
+      addMessage({ 
+        id: `warn-${Date.now()}`,
+        type: "warning", 
+        text: `Acțiune necunoscută: ${action}` 
+      });
   }
 }; 

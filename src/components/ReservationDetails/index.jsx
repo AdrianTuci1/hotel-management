@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./ReservationDetails.module.css";
+// import { useRoomOptionsStore } from "../../store/roomOptionsStore"; // Named import (incorrect)
+import useRoomOptionsStore from "../../store/roomOptionsStore"; // Default import
 
 // Subcomponente
 import ClientSection from "./ClientSection";
@@ -11,22 +13,11 @@ const ReservationDetails = ({
   reservationData, 
   setReservationData, 
   onFinalize,
-  roomManagement,
   onCancel,
   onDelete
 }) => {
-  // ===== Store Hooks =====
-  // Din roomOptionsStore:
-  // - selectedRooms: array cu camerele selectate curent
-  // - addRoom: adaugă o cameră în selecție
-  // - removeRoom: elimină o cameră din selecție
-  // - updateRoomPeriod: actualizează perioada pentru o cameră
-  // - updateRoomPrice: actualizează prețul pentru o cameră
-  // - getRoomInfo: obține informații despre o cameră
-  // - clearRooms: curăță toate camerele selectate
-
-
-
+  // Get selectedRooms directly from the store for validation
+  const selectedRooms = useRoomOptionsStore(state => state.selectedRooms);
 
   // ===== Local State =====
   const [existingClient, setExistingClient] = useState(false);
@@ -39,49 +30,59 @@ const ReservationDetails = ({
   // ===== Effects =====
   useEffect(() => {
     if (reservationData) {
-      // Inițializăm starea clientului
       setExistingClient(!!reservationData.existingClientId);
       setPaymentStatus({
         isPaid: reservationData.isPaid || false,
         hasInvoice: reservationData.hasInvoice || false,
         hasReceipt: reservationData.hasReceipt || false
       });
+    } else {
+      // Reset state if reservationData becomes null/undefined
+      setExistingClient(false);
+      setPaymentStatus({ isPaid: false, hasInvoice: false, hasReceipt: false });
     }
-  }, [reservationData?.id]);
+    // Depend on reservationData object itself for re-initialization
+  }, [reservationData]); 
 
   // ===== Event Handlers =====
   const handleSave = async () => {
     if (!validateReservation()) {
       return;
     }
-    onFinalize();
+    // onFinalize might use reservationData which now includes updated rooms/payment
+    onFinalize(); 
   };
 
   const handleCancel = () => {
     console.log("🔍 [ReservationDetails] handleCancel called");
-    console.log("onCancel type:", typeof onCancel);
     if (typeof onCancel === 'function') {
-      console.log("Calling onCancel function from ReservationDetails");
       onCancel();
     } else {
-      console.error("❌ onCancel is not a function:", onCancel);
+      console.error("❌ onCancel is not a function in ReservationDetails:", onCancel);
     }
   };
 
   const handleDelete = () => {
-    onDelete();
+    if (typeof onDelete === 'function') {
+      onDelete();
+    } else {
+      console.error("❌ onDelete is not a function in ReservationDetails:", onDelete);
+    }
   };
 
   const validateReservation = () => {
-    if (!reservationData.fullName) {
+    if (!reservationData?.fullName) { // Use optional chaining
       alert("❌ Vă rugăm să completați numele clientului!");
       return false;
     }
 
-    if (!roomManagement.selectedRooms.length) {
+    // Use selectedRooms from the store for validation
+    if (!selectedRooms.length) { 
       alert("❌ Vă rugăm să selectați cel puțin o cameră!");
       return false;
     }
+
+    // Add any other validation rules here (e.g., payment details if required)
 
     return true;
   };
@@ -99,25 +100,16 @@ const ReservationDetails = ({
             setReservationData={setReservationData}
           />
 
+          {/* Pass only setReservationData to RoomsSection */}
           <RoomsSection 
-            defaultDates={roomManagement.defaultDates}
-            selectedRooms={roomManagement.selectedRooms}
             setReservationData={setReservationData}
-            isRoomAvailable={roomManagement.isRoomAvailable}
-            addRoom={roomManagement.addRoom}
-            removeRoom={roomManagement.removeRoom}
-            updateRoomPeriod={roomManagement.updateRoomPeriod}
-            updateRoomPrice={roomManagement.updateRoomPrice}
-            getRoomInfo={roomManagement.getRoomInfo}
-            setHighlightedRoom={roomManagement.setHighlightedRoom}
-            setDefaultDates={roomManagement.setDefaultDates}
           />
 
           <PaymentSection 
             paymentStatus={paymentStatus}
-            setPaymentStatus={setPaymentStatus}
+            setPaymentStatus={setPaymentStatus} // Pass down setter for local state
             reservationData={reservationData}
-            setReservationData={setReservationData}
+            setReservationData={setReservationData} // Allow PaymentSection to update main data
           />
         </div>
       </div>
