@@ -18,7 +18,8 @@ import { useChatStore } from '../../store/chatStore';
 export const OVERLAY_TYPES = {
   RESERVATION: 'reservation',
   ROOM_MANAGEMENT: 'room',
-  PRODUCT_SALES: 'productSales'
+  PRODUCT_SALES: 'productSales',
+  INVOICE: 'show_room_invoice',
 };
 
 /**

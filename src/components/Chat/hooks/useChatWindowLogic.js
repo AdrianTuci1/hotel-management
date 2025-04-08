@@ -1,8 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useChatStore } from "../../../store/chatStore";
-import useRoomOptionsStore from "../../../store/roomOptionsStore";
-import { useCalendarStore } from "../../../store/calendarStore";
-import { initializeChat, handleChatMessage } from "../../../actions/chatActions";
+import { initializeChat /*, handleChatMessage */ } from "../../../actions/chatActions"; // handleChatMessage likely used by ChatInput directly
 import { 
   handleShowDetails, 
   handleOverlayAction 
@@ -26,25 +24,11 @@ export const useChatWindowLogic = () => {
   
   // Overlay state from ChatStore
   const overlay = useChatStore((state) => state.overlay);
-  const showOverlay = useChatStore((state) => state.showOverlay);
-  const updateOverlayData = useChatStore((state) => state.updateOverlayData);
   const closeOverlay = useChatStore((state) => state.closeOverlay);
-  const resetChat = useChatStore((state) => state.resetChat);
   
-  // Filter out user messages from the main chat display
-  const nonUserMessages = messages.filter(message => message.type !== "user");
+  // Filter out user messages from the main chat display - REMOVED
+  // const nonUserMessages = messages.filter(message => message.type !== "user");
   
-  const { updateViewPeriod, setDefaultDates } = useCalendarStore();
-  const {
-    selectedRooms,
-    addRoom,
-    removeRoom,
-    updateRoomPrice,
-    getRoomInfo,
-    setHighlightedRoom,
-    reset: resetRoomOptions
-  } = useRoomOptionsStore();
-
   // Show/hide commands panel state
   const [showCommands, setShowCommands] = useState(false);
 
@@ -53,9 +37,11 @@ export const useChatWindowLogic = () => {
    */
   useEffect(() => {
     initializeChat();
-    return () => resetRoomOptions(); 
-    // eslint-disable-next-line react-hooks/exhaustive-deps 
-  }, []);
+    return () => {
+      // Potential basic cleanup if needed, but store resets are likely better handled elsewhere
+      console.log("[HOOK] ChatWindow unmounting/effect cleanup.");
+    };
+  }, []); // No dependencies needed if initializeChat is stable and no cleanup depends on props/state
 
   /**
    * Handles showing reservation details in overlay
@@ -83,14 +69,12 @@ export const useChatWindowLogic = () => {
    */
   const handleCloseOverlay = () => {
     console.group("🔍 [HOOK] handleCloseOverlay");
-    console.log("Closing overlay with type:", overlay.type);
-    console.log("Overlay data:", overlay.data);
-
+    console.log(`Closing overlay: type=${overlay.type}, messageId=${overlay.data?.messageId}`);
+    
     const messageId = overlay.data?.messageId;
     const overlayType = overlay.type;
     
     closeOverlay(); // Close the overlay via store action
-    resetRoomOptions(); // Reset room selections
     
     // Message cleanup logic remains the same
     if (overlayType === 'reservation' && messageId) {
@@ -116,7 +100,7 @@ export const useChatWindowLogic = () => {
   };
 
   return {
-    messages: nonUserMessages,
+    messages: messages, // Return all messages
     latestIntent,
     latestUserMessage,
     overlay,

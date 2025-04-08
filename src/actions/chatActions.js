@@ -4,26 +4,32 @@
  * Acest modul coordonează comunicarea între:
  * - Interfața utilizator (UI)
  * - WebSocket Worker (canal de comunicare cu backend-ul)
- * - Middleware pentru procesarea și rutarea mesajelor
+ * - Handler-ele specifice pentru procesarea mesajelor primite
  * 
  * Fluxul de date:
  * 1. UI trimite mesaj text către chatActions (handleChatMessage)
  * 2. chatActions formatează și trimite mesajul către WebSocketWorker
- * 3. WebSocketWorker primește răspunsul și îl trimite înapoi la middleware
- * 4. Middleware-ul procesează mesajul și actualizează store-urile specifice
+ * 3. WebSocketWorker primește răspunsul, îl trimite înapoi aici
+ * 4. chatActions parsează mesajul și apelează handler-ul corespunzător
+ * 5. Handler-ul actualizează store-urile specifice (Chat, Calendar, etc.)
  */
 
 import { useChatStore } from "../store/chatStore";
-import useMiddlewareStore from "../store/middleware";
+// import useMiddlewareStore from "../store/middleware"; // Middleware eliminat
 import { 
   initializeWorker, 
   getWorker
 } from './socket/worker';
+import { parseIncomingMessage } from './socket/messageParser'; // Importăm parserul
 import { 
   OUTGOING_MESSAGE_TYPES, 
-  AUTOMATION_ACTIONS, 
-  RESERVATION_ACTIONS 
-} from './types'; // Importăm constantele necesare
+  INCOMING_MESSAGE_TYPES // Adăugăm tipurile de mesaje primite
+} from './types'; 
+import { handleOverlayAction } from './handlers/overlayHandler'; // Importăm handlerele
+import { handleAppointmentsUpdate } from './handlers/appointmentHandler';
+import { handleHistoryUpdate } from './handlers/historyHandler';
+// Presupunem că handleConnectionStatus este încă relevant (poate fi apelat din worker?)
+import { handleConnectionStatus } from './handlers/statusHandler'; 
 
 /**
  * Inițializează sistemul de chat și configurează handlerii de mesaje
@@ -31,7 +37,7 @@ import {
  * Această funcție:
  * 1. Conectează la serverul WebSocket prin intermediul unui worker
  * 2. Configurează handler-ul pentru mesajele primite
- * 3. Direcționează mesajele către middleware-ul central
+ * 3. Parsează mesajele și le direcționează către handlerul corect
  * 
  * @returns {Promise<void>}
  */
@@ -41,21 +47,55 @@ export const initializeChat = async () => {
   const worker = await initializeWorker();
   
   if (!worker) {
-    console.error("❌ [CHAT_ACTIONS] Failed to initialize chat");
+    console.error("❌ [CHAT_ACTIONS] Failed to initialize chat worker");
     console.groupEnd();
     return;
   }
 
   // Configurăm handler-ul pentru mesajele primite de la worker
   worker.onmessage = (event) => {
-    if (!event || !event.data) {
-      console.error("❌ [CHAT_ACTIONS] Invalid event received from worker");
-      return;
+    // Mesajul vine de la worker, aici îl parsăm și rutăm
+    const parsedMessage = parseIncomingMessage(event);
+
+    if (!parsedMessage) {
+      console.error("❌ [CHAT_ACTIONS] Received message could not be parsed.");
+      return; // Oprim procesarea dacă mesajul e invalid
     }
-    
-    // Middleware-ul procesează răspunsul parsat conform README
-    useMiddlewareStore.getState().processMessage(event); // Presupunem că middleware parsează și validează event.data
+
+    console.log("✅ [CHAT_ACTIONS] Received and parsed message:", parsedMessage);
+
+    // Rutăm mesajul către handlerul corespunzător pe baza tipului
+    switch (parsedMessage.type) {
+      case INCOMING_MESSAGE_TYPES.OVERLAY:
+        handleOverlayAction(parsedMessage);
+        break;
+      case INCOMING_MESSAGE_TYPES.APPOINTMENTS:
+        handleAppointmentsUpdate(parsedMessage);
+        break;
+      case INCOMING_MESSAGE_TYPES.HISTORY:
+        handleHistoryUpdate(parsedMessage);
+        break;
+      // Adăugăm un caz special pentru status, dacă worker-ul îl trimite așa
+      // Ar putea necesita ajustări în worker.js să trimită un obiect { type: 'STATUS', status: 'connected' }
+      case 'STATUS': // Sau un alt tip specific definit pentru status?
+         if (parsedMessage.payload && parsedMessage.payload.status) {
+            handleConnectionStatus(parsedMessage.payload.status); 
+         } else {
+            console.warn("❓ [CHAT_ACTIONS] Received STATUS message without valid payload:", parsedMessage);
+         }
+         break;
+      default:
+        console.warn(`❓ [CHAT_ACTIONS] Received unknown message type: ${parsedMessage.type}`, parsedMessage);
+        // Poate vrem să afișăm un mesaj generic în chat?
+        // const { addMessage } = useChatStore.getState();
+        // addMessage({ text: `Primit mesaj necunoscut: ${parsedMessage.type}`, type: "system" });
+    }
   };
+
+  // TODO: Verifică cum este gestionat statusul conexiunii. 
+  // Dacă worker.onerror sau alte mecanisme gestionează statusul, s-ar putea
+  // să nu fie nevoie de cazul 'STATUS' în `onmessage`.
+  // Exemplu: worker.onerror = () => handleConnectionStatus('disconnected');
   
   console.log("✅ [CHAT_ACTIONS] Chat system initialized successfully");
   console.groupEnd();
@@ -86,150 +126,30 @@ export const handleChatMessage = async (message) => {
        console.groupEnd();
        return;
      }
+     // Re-atașăm handlerul onmessage dacă worker-ul a fost re-inițializat
+     initializeChat(); // Re-rulează inițializarea pentru a atașa onmessage
   }
 
   try {
-    // Formatăm mesajul conform structurii din README pentru "Incoming Messages"
-    // (Client -> Server)
+    // Formatăm mesajul conform structurii definite
     const formattedMessage = {
-      type: OUTGOING_MESSAGE_TYPES.CHAT_MESSAGE, // Folosim constanta din types.js
+      type: OUTGOING_MESSAGE_TYPES.CHAT_MESSAGE, 
       content: message
     };
     
-    console.log("Sending formatted message to worker:", formattedMessage);
-    // Utilizăm middleware pentru a trimite obiectul JSON formatat
-    const success = useMiddlewareStore.getState().sendMessage(formattedMessage, worker); 
+    console.log("✉️ [CHAT_ACTIONS] Sending formatted message to worker:", formattedMessage);
     
-    if (!success) {
-      // Middleware ar trebui să gestioneze logica de eroare/reconectare intern
-      // Aici doar logăm eșecul trimiterii inițiale
-      throw new Error("Failed to send message via middleware/worker."); 
-    }
+    // Trimitem direct către worker
+    worker.postMessage(formattedMessage); 
     
-    console.log("Message sent successfully via middleware");
+    console.log("✅ [CHAT_ACTIONS] Message sent successfully to worker");
   } catch (error) {
     console.error("❌ [CHAT_ACTIONS] Error sending chat message:", error);
     addMessage({
       type: "error",
       text: "Sorry, there was an error sending your message. Please try again.",
     });
-    // Nu mai facem reconnect aici, lăsăm middleware/worker să gestioneze
-    // console.log("Trying to reconnect in 5 seconds...");
-    // setTimeout(initializeChat, 5000); 
   }
   
   console.groupEnd();
-};
-
-/**
- * Trimite o acțiune de automatizare către server
- * 
- * @param {keyof AUTOMATION_ACTIONS} actionType - Tipul acțiunii (ex: AUTOMATION_ACTIONS.BOOKING_EMAIL)
- * @param {Object} [data={}] - Date suplimentare pentru acțiune
- * @returns {boolean} true dacă acțiunea a fost trimisă cu succes către middleware, false în caz contrar
- */
-export const sendAutomationAction = (actionType, data = {}) => {
-  console.group("🚀 [CHAT_ACTIONS] Sending automation action");
-  console.log(`Action: ${actionType}, Data:`, data);
-
-  // Validăm tipul acțiunii folosind constantele importate
-  if (!Object.values(AUTOMATION_ACTIONS).includes(actionType)) {
-      console.error(`❌ [CHAT_ACTIONS] Invalid automation action type: ${actionType}`);
-      console.groupEnd();
-      return false;
-  }
-
-  const worker = getWorker();
-  if (!worker) {
-    console.error("❌ [CHAT_ACTIONS] Worker not available for automation action");
-    // Poate adăugăm un mesaj în UI
-     useChatStore.getState().addMessage({ type: 'error', text: 'Cannot perform automation action. Connection issue?' });
-    console.groupEnd();
-    return false;
-  }
-
-  try {
-      // Formatăm mesajul pentru acțiunea de automatizare.
-      // Structura exactă depinde de cum așteaptă backend-ul/middleware-ul.
-      // Presupunem o structură generică { type, action, data }
-      const formattedMessage = {
-          type: 'automation', // Un tip generic sau specific, de confirmat cu backend/middleware
-          action: actionType,
-          data: data 
-      };
-
-      console.log("Sending formatted automation action:", formattedMessage);
-      const success = useMiddlewareStore.getState().sendMessage(formattedMessage, worker);
-
-      if (!success) {
-          throw new Error("Failed to send automation action via middleware/worker.");
-      }
-
-      console.log("Automation action sent successfully to middleware");
-      console.groupEnd();
-      return true; // Indică succesul trimiterii către middleware
-
-  } catch (error) {
-      console.error(`❌ [CHAT_ACTIONS] Error sending automation action ${actionType}:`, error);
-      // Adăugăm un mesaj de eroare în UI
-      useChatStore.getState().addMessage({ type: 'error', text: `Failed to perform action: ${actionType}` });
-      console.groupEnd();
-      return false; // Indică eșecul trimiterii
-  }
-};
-
-/**
- * Trimite o acțiune de rezervare către server
- * 
- * @param {keyof RESERVATION_ACTIONS} actionType - Tipul acțiunii (ex: RESERVATION_ACTIONS.CREATE)
- * @param {Object} data - Datele necesare pentru acțiune (ex: detalii rezervare)
- * @returns {boolean} true dacă acțiunea a fost trimisă cu succes către middleware, false în caz contrar
- */
-export const sendReservationAction = (actionType, data) => {
-  console.group("🚀 [CHAT_ACTIONS] Sending reservation action");
-  console.log(`Action: ${actionType}, Data:`, data);
-
-  // Validăm tipul acțiunii folosind constantele importate
-  if (!Object.values(RESERVATION_ACTIONS).includes(actionType)) {
-      console.error(`❌ [CHAT_ACTIONS] Invalid reservation action type: ${actionType}`);
-      console.groupEnd();
-      return false;
-  }
-
-  const worker = getWorker();
-  if (!worker) {
-    console.error("❌ [CHAT_ACTIONS] Worker not available for reservation action");
-    // Poate adăugăm un mesaj în UI
-    useChatStore.getState().addMessage({ type: 'error', text: 'Cannot perform reservation action. Connection issue?' });
-    console.groupEnd();
-    return false;
-  }
-
-  try {
-    // Formatăm mesajul conform structurii din README pentru "Reservations"
-    // (Presupunând că acesta este formatul așteptat de backend/middleware pentru trimitere)
-    const formattedMessage = {
-      type: 'reservations', // Tipul principal conform README
-      action: actionType,   // Acțiunea specifică (create, update, delete etc.)
-      data: data            // Datele relevante (pot include ID, detalii rezervare etc.)
-    };
-
-    console.log("Sending formatted reservation action:", formattedMessage);
-    const success = useMiddlewareStore.getState().sendMessage(formattedMessage, worker);
-
-    if (!success) {
-      throw new Error("Failed to send reservation action via middleware/worker.");
-    }
-
-    console.log("Reservation action sent successfully to middleware");
-    console.groupEnd();
-    return true; // Indică succesul trimiterii către middleware
-
-  } catch (error) {
-    console.error(`❌ [CHAT_ACTIONS] Error sending reservation action ${actionType}:`, error);
-     // Adăugăm un mesaj de eroare în UI
-     useChatStore.getState().addMessage({ type: 'error', text: `Failed to perform reservation action: ${actionType}` });
-    console.groupEnd();
-    return false; // Indică eșecul trimiterii
-  }
 };

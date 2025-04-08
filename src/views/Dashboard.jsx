@@ -57,8 +57,18 @@ const Dashboard = () => {
     }
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
-  const showSidePanel = displayComponent || !displayComponent;
+  // Conditionally determine the component to show in the side panel
+  // Show DisplayPanel if displayComponent is set, otherwise show ReceptionDashboard
   const SidePanelComponent = displayComponent ? DisplayPanel : ReceptionDashboard;
+  const showSidePanel = true; // Side panel should always be shown
+
+  // Original logic kept for reference:
+  // const SidePanelComponent = displayComponent ? DisplayPanel : null; 
+  // const showSidePanel = !!displayComponent; 
+
+  // Original logic kept for reference:
+  // const showSidePanel = displayComponent || !displayComponent; // This was always true
+  // const SidePanelComponent = displayComponent ? DisplayPanel : ReceptionDashboard; // This was the original
 
   return (
     <div className={styles.dashboardContainer}>

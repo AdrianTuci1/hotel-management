@@ -3,23 +3,20 @@
  */
 
 /**
- * Tipurile de mesaje primite de la server
+ * Tipurile de mesaje primite de la server (Conform RESPONSE_DOCUMENTATION.md)
  * 
  * @readonly
  * @enum {string}
  */
 export const INCOMING_MESSAGE_TYPES = {
-  /** Mesaje de chat și răspunsuri */
-  CHAT: 'chat',
+  /** Acțiuni pentru UI overlay/view switching */
+  OVERLAY: 'OVERLAY',
   
-  /** Acțiuni legate de rezervări */
-  RESERVATIONS: 'reservations',
+  /** Date despre programări (fostele rezervări) */
+  APPOINTMENTS: 'APPOINTMENTS',
   
-  /** Acțiuni de automatizare și notificări */
-  NOTIFICATION: 'notification',
-  
-  /** Istoric conversații */
-  HISTORY: 'history'
+  /** Istoric consolidat (mesaje, notificări, evenimente) */
+  HISTORY: 'HISTORY'
 };
 
 /**
@@ -54,6 +51,10 @@ export const CHAT_INTENTS = {
   /** Operațiuni de cameră */
   CREATE_ROOM: 'create_room',
   MODIFY_ROOM: 'modify_room',
+  DELETE_ROOM: 'delete_room',
+  
+  /** Raportare probleme cameră */
+  ROOM_PROBLEM: 'room_problem',
   
   /** Operațiuni POS */
   SHOW_POS: 'show_pos',
@@ -66,26 +67,6 @@ export const CHAT_INTENTS = {
 };
 
 /**
- * Tipuri de răspunsuri
- * 
- * @readonly
- * @enum {string}
- */
-export const RESPONSE_TYPES = {
-  /** Mesaj informativ */
-  INFO: 'info',
-  
-  /** Mesaj de eroare */
-  ERROR: 'error',
-  
-  /** Acțiune de executat */
-  ACTION: 'action',
-  
-  /** Mesaj simplu */
-  MESSAGE: 'message'
-};
-
-/**
  * Mapare între intent-uri și componentele UI corespunzătoare
  * 
  * @readonly
@@ -93,31 +74,28 @@ export const RESPONSE_TYPES = {
  */
 export const INTENT_TO_COMPONENT_MAP = {
   'show_calendar': 'calendar',
-  'calendar': 'calendar',
   'reservation': 'calendar',
   'modify_reservation': 'calendar',
   'add_phone': 'calendar',
   'create_room': 'calendar',
   'modify_room': 'calendar',
+  'delete_room': 'calendar',
+  'room_problem': 'calendar',
   'show_pos': 'pos',
-  'pos': 'pos',
   'sell_product': 'pos',
   'show_invoices': 'invoices',
-  'invoices': 'invoices',
   'show_stock': 'stock',
-  'stock': 'stock',
-  'show_reports': 'reports',
-  'reports': 'reports'
+  'show_reports': 'reports'
 };
 
 /**
- * Tipuri de acțiuni pentru rezervări
+ * Tipuri de acțiuni pentru programări (Appointments)
  * 
  * @readonly
  * @enum {string}
  */
-export const RESERVATION_ACTIONS = {
-  /** Inițializare/sincronizare rezervări */
+export const APPOINTMENT_ACTIONS = {
+  /** Inițializare/sincronizare programări */
   INIT: 'init',
   SYNC: 'sync',
   
@@ -128,20 +106,20 @@ export const RESERVATION_ACTIONS = {
 };
 
 /**
- * Tipuri de acțiuni de automatizare
+ * Tipuri de intrări în istoricul consolidat (HISTORY type)
  * 
  * @readonly
  * @enum {string}
  */
-export const AUTOMATION_ACTIONS = {
-  /** Verificare email-uri Booking.com */
-  BOOKING_EMAIL: 'BOOKING_EMAIL',
+export const HISTORY_ENTRY_TYPES = {
+  /** Mesaj text simplu */
+  MESSAGE: 'message',
   
-  /** Verificare mesaje WhatsApp */
-  WHATSAPP_MESSAGE: 'WHATSAPP_MESSAGE',
+  /** Notificare despre evenimente automate/sistem */
+  NOTIFICATION: 'notification',
   
-  /** Analiză prețuri */
-  PRICE_ANALYSIS: 'PRICE_ANALYSIS'
+  /** Eveniment semnificativ de sistem/utilizator */
+  EVENT: 'event'
 };
 
 /**

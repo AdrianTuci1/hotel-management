@@ -337,3 +337,34 @@ This middleware approach provides several benefits:
 - Consistent format for all WebSocket messages
 - Automatic routing to appropriate stores
 - Simplified debugging with standardized logging
+
+### `middleware.js` (Store Middleware)
+
+**Rol Principal**: Punct central pentru procesarea și rutarea mesajelor WebSocket **primite** și pentru trimiterea mesajelor **către** server.
+
+**Funcționalități Cheie**:
+
+1.  **Procesare Mesaje Primite (`processMessage(event)`)**:
+    *   Primește `event` de la `WebSocketWorker`.
+    *   Extrage `type` și `payload` din `event.data`.
+    *   Normalizează tipul mesajului (ex: 'CHAT_MESSAGE' devine `MESSAGE_TYPES.CHAT`).
+    *   Apelează funcții interne specifice (`_processChatMessage`, `_processReservationsMessage`, etc.) bazate pe tipul normalizat.
+    *   Funcțiile interne:
+        *   Interacționează cu store-urile corespunzătoare (ex: `useChatStore.getState().addMessage(...)`, `useCalendarStore.getState().setReservations(...)`).
+        *   Pot declanșa actualizări UI prin `chatStore` (ex: `setDisplayComponent`, `showOverlay`). Logica pentru `showOverlay` vs `setDisplayComponent` se bazează pe `type`-ul și `intent`-ul mesajului primit (vezi `_processChatMessage`).
+
+2.  **Trimitere Mesaje (`sendMessage(message, worker)`)**:
+    *   Primește un mesaj (string sau obiect cu `content`) și instanța worker-ului.
+    *   Formatează mesajul **strict** în formatul `{ type: 'CHAT_MESSAGE', content: '...' }`.
+    *   Trimite mesajul formatat către `WebSocketWorker` pentru a fi transmis serverului.
+    *   **NU mai trimite mesaje specializate** (`automation_action`, `reservation_action`) către server. Acestea sunt acum gestionate prin interpretarea mesajelor `CHAT_MESSAGE` de către backend.
+
+**Interacțiuni**:
+
+*   **Primește de la**: `WebSocketWorker` (`onmessage` handler setat în `chatActions`).
+*   **Trimite către**: `WebSocketWorker` (`postMessage`).
+*   **Actualizează/Citește din**: `useChatStore`, `useCalendarStore`, `useAutomationStore`, `useNavigationStore`.
+
+**Beneficii**: Decuplează logica de procesare a mesajelor de componenta de chat și centralizează interacțiunile cu diversele store-uri ale aplicației.
+
+* * *

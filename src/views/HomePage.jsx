@@ -7,7 +7,6 @@ import Footer from "../components/Footer/Footer";
 import Services from '../components/Services/Services';
 import Attractions from '../components/Attractions/Attractions';
 import RoomSelection from '../components/RoomSelection/RoomSelection';
-import Calendar from "../components/Calendar/Calendar";
 
 function HomePage() {
 

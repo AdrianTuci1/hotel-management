@@ -4,42 +4,32 @@
  * Acest worker:
  * 1. Gestionează conexiunea WebSocket cu serverul backend
  * 2. Primește mesaje de la firul principal și le trimite la server
- * 3. Procesează mesaje de la server și le trimite înapoi la firul principal
- * 4. Gestionează reconnectare în caz de erori
+ * 3. Parsează mesajele JSON de la server și le trimite direct către firul principal
+ * 4. Trimite mesaje de status despre conexiune către firul principal
+ * 5. Gestionează reconnectare în caz de erori
  * 
  * Protocolul pentru comunicarea cu firul principal:
  * 
  * Mesaje primite (de la firul principal):
- * - {type: "init"} - Inițializare conexiune
- * - {type: "send_message", payload: Object|String} - Trimite mesaj la server
- * - {type: "automation_action", payload: String} - Trimite acțiune de automatizare
- * - {type: "reservation_action", payload: Object} - Trimite acțiune pentru rezervări
+ * - {type: "init"} - Inițializare/verificare conexiune
+ * - {type: "send_message", payload: Object} - Trimite mesaj formatat la server
  * 
  * Mesaje trimise (către firul principal):
  * - {type: "STATUS", payload: "connected"|"disconnected"} - Status conexiune
- * - {type: "CHAT_MESSAGE", payload: Object} - Mesaj de chat de la server
- * - {type: "RESERVATION_ACTION", payload: Object} - Acțiune pentru rezervări
- * - {type: "AUTOMATION_ACTION", payload: Object} - Acțiune de automatizare/notificare
+ * - Orice obiect JSON valid primit de la server (cu proprietatea `type`)
  */
 
 /// <reference lib="webworker" />
 
 // Configurație pentru conectare WebSocket
-const SOCKET_URL = "ws://localhost:5001/api/chat";
+const SOCKET_URL = "ws://localhost:5001/api/chat"; // TODO: Mută într-o configurație externă?
 let socket = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_INTERVAL = 5000; // 5 secunde
 let lastConnectionStatus = null; // Stocăm ultimul status pentru a evita mesaje duplicate
 
-// Constante pentru tipuri de mesaje
-const MESSAGE_TYPES = {
-  CHAT: 'chat',
-  RESERVATIONS: 'reservations',
-  NOTIFICATION: 'notification',
-  HISTORY: 'history',
-  STATUS: 'status'
-};
+const STATUS_MESSAGE_TYPE = 'STATUS'; // Tip specific pentru mesajele de status intern
 
 /**
  * Conectează la serverul WebSocket și configurează handleri pentru evenimente
@@ -47,6 +37,13 @@ const MESSAGE_TYPES = {
  * @returns {void}
  */
 const connectWebSocket = () => {
+  // Previne conexiuni multiple
+  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+      console.log("ℹ️ [WEBSOCKET] Connection attempt skipped, already connecting or open.");
+      return;
+  }
+
+  console.log(`🔌 [WEBSOCKET] Attempting to connect to ${SOCKET_URL}...`);
   socket = new WebSocket(SOCKET_URL);
 
   // Handler pentru conectare reușită
@@ -56,7 +53,7 @@ const connectWebSocket = () => {
     // Trimitem status doar dacă s-a schimbat
     if (lastConnectionStatus !== "connected") {
       lastConnectionStatus = "connected";
-      postMessage({ type: MESSAGE_TYPES.STATUS, payload: "connected" });
+      postMessage({ type: STATUS_MESSAGE_TYPE, payload: { status: "connected" } }); // Trimitem obiect cu status
     }
     
     reconnectAttempts = 0;
@@ -64,179 +61,62 @@ const connectWebSocket = () => {
 
   // Handler pentru mesaje primite de la server
   socket.onmessage = (event) => {
-    // Log raw message for debugging
     console.group("🔍 [WEBSOCKET] MESSAGE RECEIVED");
     console.log("Raw data:", event.data);
     
-    // Procesăm mesajul în format standardizat
-    processIncomingMessage(event.data);
+    try {
+      const parsedData = JSON.parse(event.data);
+
+      // Validare minimă - ne asigurăm că e obiect și are `type`
+      if (typeof parsedData === 'object' && parsedData !== null && parsedData.type) {
+         console.log("Parsed data:", parsedData);
+         // Trimitem obiectul parsat direct către firul principal
+         postMessage(parsedData); 
+      } else {
+         console.error("❌ [WEBSOCKET] Received message is not a valid object with a 'type' property:", parsedData);
+         // Nu trimitem mesajul invalid mai departe
+      }
+    } catch (error) {
+      console.error("❌ [WEBSOCKET] Error parsing incoming JSON message:", error);
+      console.error("Raw data causing error:", event.data);
+      // Nu trimitem datele neparsabile
+    }
     
     console.groupEnd();
   };
 
   // Handler pentru închiderea conexiunii
-  socket.onclose = () => {
-    console.warn("⚠️ [WEBSOCKET] Connection closed");
+  socket.onclose = (event) => {
+    console.warn(`⚠️ [WEBSOCKET] Connection closed. Code: ${event.code}, Reason: ${event.reason}`);
     
     // Trimitem status doar dacă s-a schimbat
     if (lastConnectionStatus !== "disconnected") {
       lastConnectionStatus = "disconnected";
-      postMessage({ type: MESSAGE_TYPES.STATUS, payload: "disconnected" });
+      postMessage({ type: STATUS_MESSAGE_TYPE, payload: { status: "disconnected" } }); // Trimitem obiect cu status
     }
+
+    socket = null; // Reset socket object
 
     // Mecanism de reconnectare cu număr maxim de încercări
     if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
       reconnectAttempts++;
-      console.log(`🔄 [WEBSOCKET] Reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
+      console.log(`🔄 [WEBSOCKET] Reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${RECONNECT_INTERVAL / 1000}s`);
       setTimeout(connectWebSocket, RECONNECT_INTERVAL);
     } else {
-      console.error("❌ [WEBSOCKET] Maximum reconnection attempts reached");
+      console.error(`❌ [WEBSOCKET] Maximum reconnection attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Stopping reconnection.`);
     }
   };
 
   // Handler pentru erori
   socket.onerror = (error) => {
-    console.error("❌ [WEBSOCKET] WebSocket error:", error);
-    postMessage({ 
-      type: MESSAGE_TYPES.CHAT, 
-      payload: { 
-        type: "error",
-        message: "WebSocket connection error" 
-      } 
-    });
+    // Erorile de WebSocket de obicei preced sau coincid cu `onclose`.
+    // `onclose` va gestiona trimiterea statusului și reconnectarea.
+    console.error("❌ [WEBSOCKET] WebSocket error observed:", error);
+    // Nu mai trimitem mesaj de eroare separat aici, onclose va raporta deconectarea.
   };
 };
 
-/**
- * Procesează un mesaj primit de la server și îl trimite în format standardizat
- * către firul principal
- * 
- * @param {any} data - Datele primite de la server
- * @returns {void}
- */
-const processIncomingMessage = (data) => {
-  // CARCASĂ 1: OBIECT DIRECT
-  if (typeof data === 'object' && data !== null) {
-    const directObject = data;
-    
-    // Procesăm în funcție de proprietățile obiectului
-    if (directObject.type && typeof directObject.type === 'string') {
-      // Trimitem direct cu tipul standardizat
-      postMessageWithNormalizedType(directObject.type, directObject);
-      return;
-    }
-    
-    // Dacă nu are tip, detectăm tipul din alte proprietăți
-    if (directObject.intent || directObject.message) {
-      postMessage({ type: MESSAGE_TYPES.CHAT, payload: directObject });
-      return;
-    }
-    
-    if (Array.isArray(directObject.reservations)) {
-      postMessage({ type: MESSAGE_TYPES.RESERVATIONS, payload: directObject });
-      return;
-    }
-    
-    if (directObject.notification) {
-      postMessage({ type: MESSAGE_TYPES.NOTIFICATION, payload: directObject });
-      return;
-    }
-    
-    // Default fallback pentru obiecte
-    postMessage({ type: MESSAGE_TYPES.CHAT, payload: directObject });
-    return;
-  }
-  
-  // CARCASĂ 2: JSON STRING
-  if (typeof data === 'string') {
-    try {
-      const parsedData = JSON.parse(data);
-      
-      // După parsare, procesăm ca obiect
-      if (parsedData.type && typeof parsedData.type === 'string') {
-        // Trimitem direct cu tipul standardizat
-        postMessageWithNormalizedType(parsedData.type, parsedData);
-        return;
-      }
-      
-      // Dacă nu are tip, detectăm tipul din alte proprietăți
-      if (parsedData.intent || parsedData.message) {
-        postMessage({ type: MESSAGE_TYPES.CHAT, payload: parsedData });
-        return;
-      }
-      
-      if (parsedData.response && parsedData.response.intent) {
-        postMessage({ type: MESSAGE_TYPES.CHAT, payload: parsedData.response });
-        return;
-      }
-      
-      if (Array.isArray(parsedData.reservations) || Array.isArray(parsedData)) {
-        postMessage({ 
-          type: MESSAGE_TYPES.RESERVATIONS, 
-          payload: Array.isArray(parsedData) ? { reservations: parsedData } : parsedData 
-        });
-        return;
-      }
-      
-      if (parsedData.notification) {
-        postMessage({ type: MESSAGE_TYPES.NOTIFICATION, payload: parsedData });
-        return;
-      }
-      
-      // Default fallback pentru JSON
-      postMessage({ type: MESSAGE_TYPES.CHAT, payload: parsedData });
-    } catch (error) {
-      // Dacă nu e JSON valid, trimitem ca mesaj text simplu
-      console.error("❌ [WEBSOCKET] Error parsing JSON message:", error.message);
-      postMessage({ 
-        type: MESSAGE_TYPES.CHAT, 
-        payload: { 
-          type: "message",
-          message: data 
-        } 
-      });
-    }
-    return;
-  }
-  
-  // CARCASĂ 3: ALT TIP DE DATE
-  console.warn("❓ [WEBSOCKET] Unknown message data type:", typeof data);
-  postMessage({ 
-    type: MESSAGE_TYPES.CHAT, 
-    payload: { 
-      type: "system",
-      message: `Received message of unknown type: ${typeof data}` 
-    } 
-  });
-};
-
-/**
- * Trimite un mesaj către firul principal, normalizând tipul mesajului
- * 
- * @param {string} type - Tipul mesajului
- * @param {Object} payload - Conținutul mesajului
- * @returns {void}
- */
-const postMessageWithNormalizedType = (type, payload) => {
-  const upperType = type.toUpperCase();
-  
-  if (upperType === 'CHAT' || upperType === 'MESSAGE' || upperType === 'CHAT_MESSAGE') {
-    postMessage({ type: MESSAGE_TYPES.CHAT, payload });
-  } 
-  else if (upperType === 'RESERVATIONS' || upperType === 'BOOKING' || upperType === 'RESERVATION') {
-    postMessage({ type: MESSAGE_TYPES.RESERVATIONS, payload });
-  }
-  else if (upperType === 'NOTIFICATION' || upperType === 'ALERT' || upperType === 'AUTOMATION') {
-    postMessage({ type: MESSAGE_TYPES.NOTIFICATION, payload });
-  }
-  else if (upperType === 'HISTORY') {
-    postMessage({ type: MESSAGE_TYPES.HISTORY, payload });
-  }
-  else {
-    // Default, trimitem ca mesaj de chat
-    postMessage({ type: MESSAGE_TYPES.CHAT, payload });
-  }
-};
+// Funcțiile `processIncomingMessage` și `postMessageWithNormalizedType` au fost eliminate.
 
 // Inițializare conexiune WebSocket la pornirea worker-ului
 connectWebSocket();
@@ -247,94 +127,60 @@ connectWebSocket();
  * Procesează următoarele tipuri de mesaje:
  * - init: Inițializare/reinițializare conexiune
  * - send_message: Trimite mesaj către server
- * - automation_action: Trimite acțiune de automatizare
- * - reservation_action: Trimite acțiune pentru rezervări
  */
 self.onmessage = (event) => {
+  // Validăm că avem date și un tip
+  if (!event.data || !event.data.type) {
+    console.warn("❓ [WEBSOCKET] Received invalid message from main thread:", event.data);
+    return;
+  }
+
   console.log("📥 [WEBSOCKET] Message from main thread:", event.data);
   
   const { type, payload } = event.data;
 
-  // Inițializare conexiune
+  // Inițializare/verificare conexiune
   if (type === "init") {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      console.log("🔄 [WEBSOCKET] Initializing connection");
+    if (!socket || socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) {
+      console.log("🔄 [WEBSOCKET] Received 'init', attempting connection.");
       connectWebSocket();
+    } else {
+       console.log("ℹ️ [WEBSOCKET] Received 'init', connection already open or connecting.");
+       // Putem trimite statusul curent înapoi?
+       if (socket.readyState === WebSocket.OPEN) {
+          postMessage({ type: STATUS_MESSAGE_TYPE, payload: { status: "connected" } });
+       }
     }
   } 
   // Trimitere mesaj către server
   else if (type === "send_message") {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      let messageToSend;
-      
-      // Procesare payload string sau obiect
-      if (typeof payload === 'string') {
+      // Payload ar trebui să fie deja obiectul formatat din chatActions
+      if (typeof payload === 'object' && payload !== null) {
         try {
-          // Încercăm parsarea ca JSON
-          messageToSend = JSON.parse(payload);
-        } catch (e) {
-          // Dacă nu e JSON, îl împachetăm ca CHAT_MESSAGE
-          messageToSend = { 
-            type: "CHAT_MESSAGE",
-            content: payload
-          };
+            const messageString = JSON.stringify(payload);
+            console.log("📤 [WEBSOCKET] Sending message:", payload); 
+            socket.send(messageString);
+        } catch (error) {
+            console.error("❌ [WEBSOCKET] Failed to stringify message payload:", error, payload);
         }
       } else {
-        // Dacă e deja obiect, îl folosim direct
-        messageToSend = payload;
+        console.error("❌ [WEBSOCKET] Invalid payload for 'send_message'. Expected object, got:", payload);
       }
-      
-      console.log("📤 [WEBSOCKET] Sending message:", messageToSend);
-      socket.send(JSON.stringify(messageToSend));
     } else {
-      console.warn("⚠️ [WEBSOCKET] WebSocket not connected, message not sent");
-      postMessage({ 
-        type: MESSAGE_TYPES.CHAT, 
-        payload: { 
-          type: "error",
-          message: "WebSocket not connected, message not sent" 
-        } 
-      });
+      console.warn("⚠️ [WEBSOCKET] WebSocket not connected, message not sent:", payload);
+      // Nu mai trimitem mesaj de eroare înapoi, firul principal 
+      // va primi statusul 'disconnected' de la onclose.
       
-      // Încercăm reconnectarea
-      if (!socket || socket.readyState !== WebSocket.CONNECTING) {
-        connectWebSocket();
+      // Încercăm reconectarea dacă nu suntem deja în proces
+      if (!socket || socket.readyState === WebSocket.CLOSED) {
+          console.log("🔄 [WEBSOCKET] Attempting reconnect due to send on closed socket.");
+          connectWebSocket();
       }
     }
   } 
-  // Trimitere acțiune automată
-  else if (type === "automation_action") {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      console.log("🤖 [WEBSOCKET] Sending automation action:", payload);
-      
-      // Format conform protocolului
-      socket.send(JSON.stringify({ 
-        type: "AUTOMATION_ACTION", 
-        action: payload
-      }));
-    } else {
-      console.warn("⚠️ [WEBSOCKET] WebSocket not connected, automation action not sent");
-    }
-  } 
-  // Trimitere acțiune rezervare
-  else if (type === "reservation_action") {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      console.log("🏨 [WEBSOCKET] Sending reservation action:", payload);
-      
-      // Verificare câmpuri obligatorii
-      if (!payload.action) {
-        console.error("❌ [WEBSOCKET] Missing action field in reservation action");
-        return;
-      }
-      
-      // Format conform protocolului
-      socket.send(JSON.stringify({ 
-        type: "reservations", 
-        action: payload.action,
-        data: payload.data || {}
-      }));
-    } else {
-      console.warn("⚠️ [WEBSOCKET] WebSocket not connected, reservation action not sent");
-    }
+  // Ignorăm alte tipuri de mesaje
+  else {
+      console.warn(`❓ [WEBSOCKET] Received unknown message type from main thread: ${type}`);
   }
 };

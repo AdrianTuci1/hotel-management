@@ -24,7 +24,6 @@ import calendarStore from './calendarStore';
 import roomOptionsStore from './roomOptionsStore';
 import assistantStore from './assistantStore';
 import navigationStore from './navigationStore';
-import useMiddlewareStore from './middleware';
 
 // Export all store modules for use throughout the application
 export {
@@ -36,5 +35,4 @@ export {
     roomOptionsStore,
     assistantStore,
     navigationStore,
-    useMiddlewareStore
 }; 
