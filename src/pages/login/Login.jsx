@@ -1,29 +1,80 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './Auth.module.css';
 import MainLayout from '../../components/Layout/MainLayout';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  // Funcții de autentificare
-  const handleFormSubmit = (e) => {
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Implementare pentru autentificare/înregistrare
-    setTimeout(() => setLoading(false), 1000);
+
+    const email = e.target.email.value;
+    const password = e.target.password.value;
+
+    try {
+      console.log("Attempting login/registration for:", email);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (isLogin) {
+        const userData = { email: email, name: 'Test User' };
+        const userRole = 'admin';
+        login(userData, userRole);
+        navigate('/dashboard');
+      } else {
+        const userData = { email: email, name: 'New User' };
+        const userRole = 'user';
+        login(userData, userRole);
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error("Authentication failed:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleAuth = () => {
+  const handleGoogleAuth = async () => {
     setLoading(true);
-    // Implementare pentru autentificare cu Google
-    setTimeout(() => setLoading(false), 1000);
+    console.log("Simulating Google Auth...");
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const userData = { email: 'googleuser@example.com', name: 'Google User' };
+      const userRole = 'user';
+      login(userData, userRole);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error("Google Auth failed:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handlePasskeyAuth = () => {
+  const handlePasskeyAuth = async () => {
     setLoading(true);
-    // Implementare pentru autentificare cu Passkey
-    setTimeout(() => setLoading(false), 1000);
+    console.log("Simulating Passkey Auth...");
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const userData = { email: 'passkeyuser@example.com', name: 'Passkey User' };
+      const userRole = 'admin';
+      login(userData, userRole);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error("Passkey Auth failed:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -15,30 +15,23 @@ export const parseIncomingMessage = (rawMessage) => {
   if (typeof rawMessage === 'object' && rawMessage !== null && rawMessage.data) {
     messageData = rawMessage.data;
   } else {
-    messageData = rawMessage;
+    // If it's not a MessageEvent, maybe it's already the data object?
+    // This handles cases where the worker might send data directly in tests or specific scenarios.
+    messageData = rawMessage; 
   }
 
-  // Ne asigurăm că avem un string înainte de a parsa
-  if (typeof messageData !== 'string') {
-    console.error('[MESSAGE_PARSER] Received non-string message data:', messageData);
+  // Removed the string check and JSON.parse as the worker sends objects directly
+  // console.error('[MESSAGE_PARSER] Received non-string message data:', messageData); // No longer an error if it's an object
+
+  // Validare - ne așteptăm la un obiect cu o proprietate 'type'
+  if (typeof messageData !== 'object' || messageData === null || !messageData.type) {
+    console.error('[MESSAGE_PARSER] Invalid message structure or missing type:', messageData);
     return null;
   }
 
-  try {
-    const parsed = JSON.parse(messageData);
-    
-    // Validare minimă - ne așteptăm la un obiect cu o proprietate 'type'
-    if (typeof parsed !== 'object' || parsed === null || !parsed.type) {
-      console.error('[MESSAGE_PARSER] Invalid message structure after parsing:', parsed);
-      return null;
-    }
+  console.log('[MESSAGE_PARSER] Successfully processed message:', messageData);
+  return messageData; // Return the object directly
 
-    console.log('[MESSAGE_PARSER] Successfully parsed message:', parsed);
-    return parsed;
-
-  } catch (error) {
-    console.error('[MESSAGE_PARSER] Failed to parse incoming JSON message:', error);
-    console.error('[MESSAGE_PARSER] Raw message data:', messageData);
-    return null;
-  }
+  // Removed the try...catch block for JSON.parse
+  // } catch (error) { ... }
 }; 
