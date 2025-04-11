@@ -81,7 +81,7 @@ const connectWebSocket = () => {
       console.error("Raw data causing error:", event.data);
       // Nu trimitem datele neparsabile
     }
-    
+
     console.groupEnd();
   };
 
@@ -155,27 +155,23 @@ self.onmessage = (event) => {
   // Trimitere mesaj către server
   else if (type === "send_message") {
     if (socket && socket.readyState === WebSocket.OPEN) {
-      // Payload ar trebui să fie deja obiectul formatat din chatActions
+      // Mesajul este deja formatat în chatActions, doar îl trimitem
       if (typeof payload === 'object' && payload !== null) {
         try {
-            const messageString = JSON.stringify(payload);
-            console.log("📤 [WEBSOCKET] Sending message:", payload); 
-            socket.send(messageString);
+          const messageString = JSON.stringify(payload);
+          console.log("📤 [WEBSOCKET] Sending message to server:", messageString);
+          socket.send(messageString);
         } catch (error) {
-            console.error("❌ [WEBSOCKET] Failed to stringify message payload:", error, payload);
+          console.error("❌ [WEBSOCKET] Failed to stringify message payload:", error, payload);
         }
       } else {
-        console.error("❌ [WEBSOCKET] Invalid payload for 'send_message'. Expected object, got:", payload);
+        console.error("❌ [WEBSOCKET] Invalid payload for 'CHAT_MESSAGE'. Expected object, got:", payload);
       }
     } else {
       console.warn("⚠️ [WEBSOCKET] WebSocket not connected, message not sent:", payload);
-      // Nu mai trimitem mesaj de eroare înapoi, firul principal 
-      // va primi statusul 'disconnected' de la onclose.
-      
-      // Încercăm reconectarea dacă nu suntem deja în proces
       if (!socket || socket.readyState === WebSocket.CLOSED) {
-          console.log("🔄 [WEBSOCKET] Attempting reconnect due to send on closed socket.");
-          connectWebSocket();
+        console.log("🔄 [WEBSOCKET] Attempting reconnect due to send on closed socket.");
+        connectWebSocket();
       }
     }
   } 

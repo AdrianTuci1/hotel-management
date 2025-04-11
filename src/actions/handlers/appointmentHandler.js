@@ -21,17 +21,27 @@ export const handleAppointmentsUpdate = (message) => {
   console.group("🗓️ [APPOINTMENT_HANDLER] Processing appointment update");
   console.log("Message:", message);
 
-  const { setAppointments, getAppointments } = useCalendarStore.getState();
+  const { setReservations, getAppointments } = useCalendarStore.getState();
   
-  // Verificări de bază
-  if (!message || message.type !== 'APPOINTMENTS' || !message.action || !message.data || !Array.isArray(message.data.appointments)) {
-    console.error("❌ [APPOINTMENT_HANDLER] Invalid message structure or missing appointments data");
+  // Verificări de bază - mai flexibile cu tipul mesajului
+  if (!message || !message.type || !message.data) {
+    console.error("❌ [APPOINTMENT_HANDLER] Invalid message structure");
     console.groupEnd();
     return;
   }
-  
-  const action = message.action;
-  const appointments = message.data.appointments;
+
+  // Normalizăm tipul mesajului (case-insensitive)
+  const messageType = message.type.toUpperCase();
+  if (messageType !== 'APPOINTMENTS') {
+    console.error("❌ [APPOINTMENT_HANDLER] Invalid message type:", message.type);
+    console.groupEnd();
+    return;
+  }
+
+  // Verificăm și normalizăm appointments array-ul
+  const appointments = Array.isArray(message.data.appointments) ? message.data.appointments : [];
+  // Folosim acțiunea din mesaj sau default la INIT dacă lipsește
+  const action = message.action || APPOINTMENT_ACTIONS.INIT; 
   
   console.log("Action:", action);
   console.log("Appointments count:", appointments.length);
@@ -40,7 +50,7 @@ export const handleAppointmentsUpdate = (message) => {
     case APPOINTMENT_ACTIONS.INIT:
     case APPOINTMENT_ACTIONS.SYNC: // Considerăm SYNC echivalent cu INIT pentru moment
       // Inițializare/sincronizare - înlocuim toate programările
-      setAppointments(appointments);
+      setReservations(appointments);
       console.log("✅ [APPOINTMENT_HANDLER] Appointments synchronized");
       break;
       
@@ -49,7 +59,7 @@ export const handleAppointmentsUpdate = (message) => {
       if (appointments.length > 0) {
         const currentAppointments = getAppointments();
         const newAppointments = [...currentAppointments, ...appointments];
-        setAppointments(newAppointments);
+        setReservations(newAppointments);
         console.log(`✅ [APPOINTMENT_HANDLER] ${appointments.length} appointment(s) added`);
       }
       break;
@@ -82,7 +92,7 @@ export const handleAppointmentsUpdate = (message) => {
         
         // Convertim înapoi la array
         const updatedAppointments = Array.from(appointmentsMap.values());
-        setAppointments(updatedAppointments);
+        setReservations(updatedAppointments);
         console.log(`✅ [APPOINTMENT_HANDLER] ${updatedCount} appointment(s) updated, ${addedCount} added.`);
       }
       break;
@@ -101,7 +111,7 @@ export const handleAppointmentsUpdate = (message) => {
         if (idsToDelete.size > 0) {
           // Filtrăm programările care nu trebuie șterse
           const updatedAppointments = currentAppointments.filter(appt => !idsToDelete.has(appt.id));
-          setAppointments(updatedAppointments);
+          setReservations(updatedAppointments);
           console.log(`✅ [APPOINTMENT_HANDLER] ${idsToDelete.size} appointment(s) deleted`);
         } else {
            console.warn(`[APPOINTMENT_HANDLER] Delete action received, but no valid IDs found in the payload.`);

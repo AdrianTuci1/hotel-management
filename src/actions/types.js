@@ -10,13 +10,13 @@
  */
 export const INCOMING_MESSAGE_TYPES = {
   /** Acțiuni pentru UI overlay/view switching */
-  OVERLAY: 'OVERLAY',
+  OVERLAY: 'overlay',
   
   /** Date despre programări (fostele rezervări) */
-  APPOINTMENTS: 'APPOINTMENTS',
+  APPOINTMENTS: 'appointments',
   
   /** Istoric consolidat (mesaje, notificări, evenimente) */
-  HISTORY: 'HISTORY'
+  HISTORY: 'history'
 };
 
 /**

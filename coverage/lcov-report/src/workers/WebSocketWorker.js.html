@@ -244,11 +244,7 @@
 <a name='L179'></a><a href='#L179'>179</a>
 <a name='L180'></a><a href='#L180'>180</a>
 <a name='L181'></a><a href='#L181'>181</a>
-<a name='L182'></a><a href='#L182'>182</a>
-<a name='L183'></a><a href='#L183'>183</a>
-<a name='L184'></a><a href='#L184'>184</a>
-<a name='L185'></a><a href='#L185'>185</a>
-<a name='L186'></a><a href='#L186'>186</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L182'></a><a href='#L182'>182</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -419,10 +415,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -516,7 +508,7 @@ const connectWebSocket = <span class="cstat-no" title="statement not covered" ><
 <span class="cstat-no" title="statement not covered" >      console.error("Raw data causing error:", event.data);</span>
       // Nu trimitem datele neparsabile
     }
-    
+&nbsp;
 <span class="cstat-no" title="statement not covered" >    console.groupEnd();</span>
   };
 &nbsp;
@@ -590,27 +582,23 @@ const connectWebSocket = <span class="cstat-no" title="statement not covered" ><
   // Trimitere mesaj către server
   else <span class="cstat-no" title="statement not covered" >if (type === "send_message") {</span>
 <span class="cstat-no" title="statement not covered" >    if (socket &amp;&amp; socket.readyState === WebSocket.OPEN) {</span>
-      // Payload ar trebui să fie deja obiectul formatat din chatActions
+      // Mesajul este deja formatat în chatActions, doar îl trimitem
 <span class="cstat-no" title="statement not covered" >      if (typeof payload === 'object' &amp;&amp; payload !== null) {</span>
 <span class="cstat-no" title="statement not covered" >        try {</span>
-            const messageString = <span class="cstat-no" title="statement not covered" >JSON.stringify(payload);</span>
-<span class="cstat-no" title="statement not covered" >            console.log("📤 [WEBSOCKET] Sending message:", payload); </span>
-<span class="cstat-no" title="statement not covered" >            socket.send(messageString);</span>
+          const messageString = <span class="cstat-no" title="statement not covered" >JSON.stringify(payload);</span>
+<span class="cstat-no" title="statement not covered" >          console.log("📤 [WEBSOCKET] Sending message to server:", messageString);</span>
+<span class="cstat-no" title="statement not covered" >          socket.send(messageString);</span>
         } catch (error) {
-<span class="cstat-no" title="statement not covered" >            console.error("❌ [WEBSOCKET] Failed to stringify message payload:", error, payload);</span>
+<span class="cstat-no" title="statement not covered" >          console.error("❌ [WEBSOCKET] Failed to stringify message payload:", error, payload);</span>
         }
       } else {
-<span class="cstat-no" title="statement not covered" >        console.error("❌ [WEBSOCKET] Invalid payload for 'send_message'. Expected object, got:", payload);</span>
+<span class="cstat-no" title="statement not covered" >        console.error("❌ [WEBSOCKET] Invalid payload for 'CHAT_MESSAGE'. Expected object, got:", payload);</span>
       }
     } else {
 <span class="cstat-no" title="statement not covered" >      console.warn("⚠️ [WEBSOCKET] WebSocket not connected, message not sent:", payload);</span>
-      // Nu mai trimitem mesaj de eroare înapoi, firul principal 
-      // va primi statusul 'disconnected' de la onclose.
-      
-      // Încercăm reconectarea dacă nu suntem deja în proces
 <span class="cstat-no" title="statement not covered" >      if (!socket || socket.readyState === WebSocket.CLOSED) {</span>
-<span class="cstat-no" title="statement not covered" >          console.log("🔄 [WEBSOCKET] Attempting reconnect due to send on closed socket.");</span>
-<span class="cstat-no" title="statement not covered" >          connectWebSocket();</span>
+<span class="cstat-no" title="statement not covered" >        console.log("🔄 [WEBSOCKET] Attempting reconnect due to send on closed socket.");</span>
+<span class="cstat-no" title="statement not covered" >        connectWebSocket();</span>
       }
     }
   } 
@@ -625,7 +613,7 @@ const connectWebSocket = <span class="cstat-no" title="statement not covered" ><
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-04-08T23:44:24.313Z
+                at 2025-04-11T23:55:14.465Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

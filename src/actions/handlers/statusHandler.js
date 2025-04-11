@@ -61,8 +61,10 @@ export const handleConnectionStatus = (payload) => {
   }
   
   console.log("✅ [STATUS_HANDLER] Connection status updated");
-  console.groupEnd();
   
   // Salvăm noul status
   lastStatus = status;
+  
+  // Ensure the group is closed at the end of the status change logic
+  console.groupEnd();
 }; 

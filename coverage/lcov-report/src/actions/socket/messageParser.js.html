@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/17</span>
+                <span class='fraction'>0/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/12</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/17</span>
+                <span class='fraction'>0/9</span>
             </div>
         
             
@@ -99,14 +99,7 @@
 <a name='L34'></a><a href='#L34'>34</a>
 <a name='L35'></a><a href='#L35'>35</a>
 <a name='L36'></a><a href='#L36'>36</a>
-<a name='L37'></a><a href='#L37'>37</a>
-<a name='L38'></a><a href='#L38'>38</a>
-<a name='L39'></a><a href='#L39'>39</a>
-<a name='L40'></a><a href='#L40'>40</a>
-<a name='L41'></a><a href='#L41'>41</a>
-<a name='L42'></a><a href='#L42'>42</a>
-<a name='L43'></a><a href='#L43'>43</a>
-<a name='L44'></a><a href='#L44'>44</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L37'></a><a href='#L37'>37</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -123,7 +116,12 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -136,18 +134,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * @fileoverview Parser simplu pentru mesajele JSON primite de la server.
@@ -166,32 +152,25 @@ export const parseIncomingMessage = <span class="cstat-no" title="statement not 
 <span class="cstat-no" title="statement not covered" >  if (typeof rawMessage === 'object' &amp;&amp; rawMessage !== null &amp;&amp; rawMessage.data) {</span>
 <span class="cstat-no" title="statement not covered" >    messageData = rawMessage.data;</span>
   } else {
-<span class="cstat-no" title="statement not covered" >    messageData = rawMessage;</span>
+    // If it's not a MessageEvent, maybe it's already the data object?
+    // This handles cases where the worker might send data directly in tests or specific scenarios.
+<span class="cstat-no" title="statement not covered" >    messageData = rawMessage; </span>
   }
 &nbsp;
-  // Ne asigurăm că avem un string înainte de a parsa
-<span class="cstat-no" title="statement not covered" >  if (typeof messageData !== 'string') {</span>
-<span class="cstat-no" title="statement not covered" >    console.error('[MESSAGE_PARSER] Received non-string message data:', messageData);</span>
+  // Removed the string check and JSON.parse as the worker sends objects directly
+  // console.error('[MESSAGE_PARSER] Received non-string message data:', messageData); // No longer an error if it's an object
+&nbsp;
+  // Validare - ne așteptăm la un obiect cu o proprietate 'type'
+<span class="cstat-no" title="statement not covered" >  if (typeof messageData !== 'object' || messageData === null || !messageData.type) {</span>
+<span class="cstat-no" title="statement not covered" >    console.error('[MESSAGE_PARSER] Invalid message structure or missing type:', messageData);</span>
 <span class="cstat-no" title="statement not covered" >    return null;</span>
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  try {</span>
-    const parsed = <span class="cstat-no" title="statement not covered" >JSON.parse(messageData);</span>
-    
-    // Validare minimă - ne așteptăm la un obiect cu o proprietate 'type'
-<span class="cstat-no" title="statement not covered" >    if (typeof parsed !== 'object' || parsed === null || !parsed.type) {</span>
-<span class="cstat-no" title="statement not covered" >      console.error('[MESSAGE_PARSER] Invalid message structure after parsing:', parsed);</span>
-<span class="cstat-no" title="statement not covered" >      return null;</span>
-    }
+<span class="cstat-no" title="statement not covered" >  console.log('[MESSAGE_PARSER] Successfully processed message:', messageData);</span>
+<span class="cstat-no" title="statement not covered" >  return messageData; </span>// Return the object directly
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    console.log('[MESSAGE_PARSER] Successfully parsed message:', parsed);</span>
-<span class="cstat-no" title="statement not covered" >    return parsed;</span>
-&nbsp;
-  } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('[MESSAGE_PARSER] Failed to parse incoming JSON message:', error);</span>
-<span class="cstat-no" title="statement not covered" >    console.error('[MESSAGE_PARSER] Raw message data:', messageData);</span>
-<span class="cstat-no" title="statement not covered" >    return null;</span>
-  }
+  // Removed the try...catch block for JSON.parse
+  // } catch (error) { ... }
 }; </pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -199,7 +178,7 @@ export const parseIncomingMessage = <span class="cstat-no" title="statement not 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-04-08T23:44:24.313Z
+                at 2025-04-11T23:55:14.465Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

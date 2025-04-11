@@ -21,10 +21,12 @@ export const handleOverlayAction = (message) => {
   console.group("🖱️ [OVERLAY_HANDLER] Processing overlay action");
   console.log("Message:", message);
 
+  
   const { setDisplayComponent, showOverlay, setLatestIntent } = useChatStore.getState();
 
+
   // Verificări de bază
-  if (!message || message.type !== 'OVERLAY' || !message.action) {
+  if (!message || message.type !== 'overlay' || !message.action) {
     console.error("❌ [OVERLAY_HANDLER] Invalid message structure or missing action");
     console.groupEnd();
     return;

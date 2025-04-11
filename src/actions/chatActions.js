@@ -131,10 +131,13 @@ export const handleChatMessage = async (message) => {
   }
 
   try {
-    // Formatăm mesajul conform structurii definite
+    // Formatăm mesajul conform structurii așteptate de worker
     const formattedMessage = {
-      type: OUTGOING_MESSAGE_TYPES.CHAT_MESSAGE, 
-      content: message
+      type: "send_message",
+      payload: {
+        type: OUTGOING_MESSAGE_TYPES.CHAT_MESSAGE,
+        content: message
+      }
     };
     
     console.log("✉️ [CHAT_ACTIONS] Sending formatted message to worker:", formattedMessage);
